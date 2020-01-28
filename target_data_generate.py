@@ -1,6 +1,9 @@
 import re
 import os
 import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+from PIL import Image
 
 joint_state_file = open("joints_controller_cmd_publisher-3-stdout.log","r")
 line = joint_state_file.readline()
@@ -50,74 +53,72 @@ while(line):
     line = link_state_file.readline()
 link_state_file.close()
 
-'''
-R1_x = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, 0.0, -1.0],
-            [0.0, 1.0, 0.0]
-            ])
-R1_y = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0]
-            ])
-R1_z = np.array([
-            [0.0, 1.0, 0.0],
-            [-1.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0]
-            ])
-print(np.dot(np.dot(R1_x,R1_y),R1_z))
-R2_x = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, 0.0, -1.0],
-            [0.0, 1.0, 0.0]
-            ])
-R2_y = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0]
-            ])
-R2_z = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0]
-            ])
-print(np.dot(np.dot(R2_x,R2_y),R2_z))
-R3_x = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0]
-            ])
-R3_y = np.array([
-            [-1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, -1.0]
-            ])
-R3_z = np.array([
-            [0.0, 1.0, 0.0],
-            [-1.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0]
-            ])
-print(np.dot(np.dot(R3_x,R3_y),R3_z))
-'''
+# R1_x = np.array([
+#             [1.0, 0.0, 0.0],
+#             [0.0, 0.0, 1.0],
+#             [0.0, -1.0, 0.0]
+#             ])
+# R1_y = np.array([
+#             [1.0, 0.0, 0.0],
+#             [0.0, 1.0, 0.0],
+#             [0.0, 0.0, 1.0]
+#             ])
+# R1_z = np.array([
+#             [0.0, -1.0, 0.0],
+#             [1.0, 0.0, 0.0],
+#             [0.0, 0.0, 1.0]
+#             ])
+# print(np.dot(np.dot(R1_x,R1_y),R1_z))
+# R2_x = np.array([
+#             [1.0, 0.0, 0.0],
+#             [0.0, 0.0, 1.0],
+#             [0.0, -1.0, 0.0]
+#             ])
+# R2_y = np.array([
+#             [1.0, 0.0, 0.0],
+#             [0.0, 1.0, 0.0],
+#             [0.0, 0.0, 1.0]
+#             ])
+# R2_z = np.array([
+#             [-1.0, 0.0, 0.0],
+#             [0.0, -1.0, 0.0],
+#             [0.0, 0.0, 1.0]
+#             ])
+# print(np.dot(np.dot(R2_x,R2_y),R2_z))
+# R3_x = np.array([
+#             [1.0, 0.0, 0.0],
+#             [0.0, -1.0, 0.0],
+#             [0.0, 0.0, -1.0]
+#             ])
+# R3_y = np.array([
+#             [1.0, 0.0, 0.0],
+#             [0.0, 1.0, 0.0],
+#             [0.0, 0.0, 1.0]
+#             ])
+# R3_z = np.array([
+#             [0.0, -1.0, 0.0],
+#             [1.0, 0.0, 0.0],
+#             [0.0, 0.0, 1.0]
+#             ])
+# print(np.dot(np.dot(R3_x,R3_y),R3_z))
 
 R_T = [
         np.array([
-            [0.0, 1.0, 0.0, 0.0], 
-            [0.0, 0.0, -1.0, -0.5], 
+            [0.0, -1.0, 0.0, 0.0], 
+            [0.0, 0.0, 1.0, -0.5], 
             [-1.0, 0.0, 0.0, -1.5],
             [0.0, 0.0, 0.0, 1.0]
             ]),
         np.array([
-            [1.0, 0.0, 0.0, 0.0], 
-            [0.0, 0.0, -1.0, -0.5], 
+            [-1.0, 0.0, 0.0, 0.0], 
+            [0.0, 0.0, 1.0, -0.5], 
             [0.0, 1.0, 0.0, -1.5],
             [0.0, 0.0, 0.0, 1.0]
             ]),
         np.array([
             [0.0, -1.0, 0.0, 0.0], 
             [-1.0, 0.0, 0.0, 0.0], 
-            [0.0, 0.0, -1.0, -1.85],
+            [0.0, 0.0, -1.0, 1.85],
             [0.0, 0.0, 0.0, 1.0]
             ])
      ]
@@ -141,19 +142,28 @@ P = [
     ]
 
 
-for i in range(1, len(link_state_map)+1):
+for i in range(5, len(link_state_map)+1):
     link_data = link_state_map[i]
-    for j in range(len(link_data)):
-        W = np.array([link_data[j] + [1.0]])
-        W = np.transpose(W)
-        for k in range(3):
+    print(link_data)
+    for k in range(3):
+        heatmap = np.zeros((224,224))
+        for j in range(len(link_data)):
+            W = np.array([link_data[j] + [1.0]])
+            W = np.transpose(W)
             C = np.dot(R_T[k], W)
             Zc = C[2][0]
             u_v = np.dot(P[k], C)
             u_v = u_v / Zc
             u_v = u_v / u_v[2][0]
             
-            heatmap1 = CenterLabelHeatMap(width, height, cx, cy, 21)
+            print(u_v)
+            # ax = plt.gca()
+            # # ax.xaxis.set_ticks_position('top')
+            # ax.spines["bottom"].set_position
+            heatmap += CenterGaussianHeatMap(224, 224, u_v[0][0], u_v[1][0], 3)
+            
+        cv2.imshow("hm",heatmap)
+        cv2.waitKey(0)
 
     break
 
