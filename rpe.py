@@ -12,15 +12,19 @@ import matplotlib.pyplot as plt
 import target_data_generate
 import re
 
+use_gpu = torch.cuda.is_available()
+
 
 img_h, img_w = 224, 224
-batch_size = 2
-lr_init = 0.001
+batch_size = 1
+lr_init = 1e-4
 max_epoch = 5
 
 all_data_list = os.listdir('./camera_data')
-test_data_list = random.sample(all_data_list, 1000)
+test_data_list = random.sample(all_data_list, 500)
 train_data_list = list(set(all_data_list) - set(test_data_list))
+random.shuffle(test_data_list)
+random.shuffle(train_data_list)
 
 joint_state_target = target_data_generate.gen_joint_state_target()
 link_state_target = target_data_generate.gen_link_state_target()
@@ -45,13 +49,13 @@ class RobotJointModel(nn.Module):
 							nn.ReLU(),
 							nn.Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1)),
 							nn.ReLU(),
-							nn.Conv2d(512, 6, kernel_size=(1, 1), stride=(1, 1)),
+							nn.Conv2d(512, 7, kernel_size=(1, 1), stride=(1, 1)),
 							nn.Sigmoid()
 							)
 		)
 		for i in range(self.N):
 			self.stages.append(nn.Sequential(
-								nn.Conv2d(262, 128, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False),
+								nn.Conv2d(263, 128, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False),
 								nn.BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
 								nn.ReLU(),
 								nn.Conv2d(128, 128, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False),
@@ -68,7 +72,7 @@ class RobotJointModel(nn.Module):
 								nn.ReLU(),
 								nn.Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1)),
 								nn.ReLU(),
-								nn.Conv2d(512, 6, kernel_size=(1, 1), stride=(1, 1)),
+								nn.Conv2d(512, 7, kernel_size=(1, 1), stride=(1, 1)),
 								nn.Sigmoid()
 								)
 			)
@@ -149,28 +153,35 @@ test_data = MyDataset(test_data_list, './camera_data/', norm_trans)
 test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True)
 
 net = RobotJointModel()
+if(use_gpu):
+	net = net.cuda()
 net.initialize_weights()
 
-criterion = CustomLoss()                                                   # 选择损失函数
-optimizer = torch.optim.SGD(net.parameters(), lr=lr_init, momentum=0.9, dampening=0.1)    # 选择优化器
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)     # 设置学习率下降策略
+criterion = nn.MSELoss()                                                   # 选择损失函数
+if(use_gpu):
+	criterion = criterion.cuda()
+optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
 	loss_sigma = 0.0    # 记录一个epoch的loss之和
 	correct = 0.0
 	total = 0.0
-	scheduler.step()  # 更新学习率
 
 	for i, data in enumerate(train_loader):
 		inputs, labels = data
 		inputs, labels = torch.autograd.Variable(inputs), torch.autograd.Variable(labels)
 
+		if(use_gpu):
+			inputs, labels = inputs.cuda(), labels.cuda()
 		optimizer.zero_grad()
 		outputs = net(inputs)
-		loss = criterion(outputs, labels)
+		loss = criterion(outputs, labels.float())
 		loss.backward()
 		optimizer.step()
 
+		if(use_gpu):
+			loss = loss.cpu()
 		loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
@@ -179,27 +190,31 @@ for epoch in range(max_epoch):
 			loss_sigma = 0.0
 			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.4f}".format(
 				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
+	scheduler.step()  # 更新学习率
 
-	# if epoch % 2 == 0:
-	# 	loss_sigma = 0.0
-	# 	net.eval()
-	# 	for i, data in enumerate(test_loader):
+	loss_sigma = 0.0
+	net.eval()
+	for i, data in enumerate(test_loader):
 
-	# 		# 获取图片和标签
-	# 		images, labels = data
-	# 		images, labels = torch.autograd.Variable(images), torch.autograd.Variable(labels)
+		# 获取图片和标签
+		images, labels = data
+		images, labels = torch.autograd.Variable(images), torch.autograd.Variable(labels)
 
-	# 		# forward
-	# 		outputs = net(images)
-	# 		outputs.detach_()
+		if(use_gpu):
+			images, labels = images.cuda(), labels.cuda()
 
-	# 		# 计算loss
-	# 		loss = criterion(outputs, labels)
-	# 		loss_sigma += loss.item()
+		# forward
+		outputs = net(images)
+		
+		out_for_image = outputs*255
+		out_for_image = out_for_image.cpu()
+		cv2.imwrite('./test_predict/'+test_data_list[i]+'-7.jpg', out_for_image.detach().numpy()[0][6])
+		cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', sum(out_for_image.detach().numpy())[0][:6])
 
-	# 		# 统计
-	# 		_, predicted = torch.max(outputs.data, 1)
-	# 		# labels = labels.data    # Variable --> tensor
+		# 计算loss
+		loss = criterion(outputs, labels.float())
+		loss_sigma += loss.item()
 
-
-	# 	print('{} set Accuracy:{:.2%}'.format('Valid', conf_mat.trace() / conf_mat.sum()))
+	loss_avg = loss_sigma / len(test_loader)
+	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {:.4f}".format(
+		epoch + 1, max_epoch, loss_avg))
