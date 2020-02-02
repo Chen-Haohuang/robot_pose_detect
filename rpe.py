@@ -147,10 +147,10 @@ norm_trans = transforms.Compose([
 			])
 
 train_data = MyDataset(train_data_list, './camera_train_data/', norm_trans)
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, num_workers=2)
 
 test_data = MyDataset(test_data_list, './camera_train_data/', norm_trans)
-test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, num_workers=2)
 
 net = RobotJointModel()
 if(use_gpu):
@@ -208,6 +208,9 @@ for epoch in range(max_epoch):
 		
 		out_for_image = outputs*255
 		out_for_image = out_for_image.cpu()
+		joint_image = np.zeros((56,56))
+		for j in range(6):
+			joint_image += out_for_image[0][j]
 		cv2.imwrite('./test_predict/'+test_data_list[i]+'-7.jpg', out_for_image.detach().numpy()[0][6])
 		cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', sum(out_for_image.detach().numpy())[0][:6])
 
