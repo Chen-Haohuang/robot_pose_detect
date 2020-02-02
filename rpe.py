@@ -16,7 +16,7 @@ use_gpu = torch.cuda.is_available()
 
 
 img_h, img_w = 224, 224
-batch_size = 1
+batch_size = 16
 lr_init = 1e-5
 max_epoch = 5
 
@@ -162,7 +162,8 @@ if(use_gpu):
 	criterion = criterion.cuda()
 #optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
 optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
+#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-6, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
 	loss_sigma = 0.0    # 记录一个epoch的loss之和
@@ -186,12 +187,12 @@ for epoch in range(max_epoch):
 		loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
-		if i % 10 == 9:
-		        loss_avg = loss_sigma / 10
+		if i % 5 == 4:
+		        loss_avg = loss_sigma / 5
 		        loss_sigma = 0.0
-		        print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.4f}".format(
+		        print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:f}".format(
 			epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
-	scheduler.step()  # 更新学习率
+	        scheduler.step(loss)  # 更新学习率
 
 	loss_sigma = 0.0
 	net.eval()
