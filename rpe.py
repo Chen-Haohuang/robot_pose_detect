@@ -18,9 +18,9 @@ use_gpu = torch.cuda.is_available()
 img_h, img_w = 224, 224
 batch_size = 1
 lr_init = 1e-4
-max_epoch = 5
+max_epoch = 1
 
-all_data_list = os.listdir('./camera_data')
+all_data_list = os.listdir('./camera_train_data')
 test_data_list = random.sample(all_data_list, 500)
 train_data_list = list(set(all_data_list) - set(test_data_list))
 random.shuffle(test_data_list)
@@ -129,7 +129,7 @@ class MyDataset(Dataset):
 		img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
 		img = self.transform(img)   # 在这里做transform，转为tensor等等
 
-		matchObj = re.match(r'camera(.*?)-(.*?).jpg', id, re.M|re.I)
+		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
 		data_index = int(matchObj.group(2))
 		heatmap = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
@@ -146,10 +146,10 @@ norm_trans = transforms.Compose([
 				transforms.Normalize(mean=means, std=stdevs)
 			])
 
-train_data = MyDataset(train_data_list, './camera_data/', norm_trans)
+train_data = MyDataset(train_data_list, './camera_train_data/', norm_trans)
 train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
 
-test_data = MyDataset(test_data_list, './camera_data/', norm_trans)
+test_data = MyDataset(test_data_list, './camera_train_data/', norm_trans)
 test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True)
 
 net = RobotJointModel()
@@ -185,11 +185,11 @@ for epoch in range(max_epoch):
 		loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
-		if i % 10 == 9:
-			loss_avg = loss_sigma / 10
-			loss_sigma = 0.0
-			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.4f}".format(
-				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
+		# if i % 10 == 9:
+		loss_avg = loss_sigma #/ 10
+		loss_sigma = 0.0
+		print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.4f}".format(
+			epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
 	scheduler.step()  # 更新学习率
 
 	loss_sigma = 0.0

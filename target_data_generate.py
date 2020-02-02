@@ -7,7 +7,7 @@ from PIL import Image
 import json
 
 def gen_joint_state_target():
-    joint_state_file = open("joints_controller_cmd_publisher-3-stdout.log","r")
+    joint_state_file = open("joints_controller_cmd_publisher-4-stdout.log","r")
     line = joint_state_file.readline()
     joint_state = []
     while(line):
@@ -22,7 +22,7 @@ def gen_joint_state_target():
     return joint_state
 
 def gen_link_state_target():
-    link_state_file = open("link_state_saver-4-stdout.log","r")
+    link_state_file = open("link_state_saver-5-stdout.log","r")
     line = link_state_file.readline()
     link_state = []
     while(line):
