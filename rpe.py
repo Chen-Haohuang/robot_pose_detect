@@ -210,9 +210,9 @@ for epoch in range(max_epoch):
 		out_for_image = out_for_image.cpu()
 		joint_image = np.zeros((56,56))
 		for j in range(6):
-			joint_image += out_for_image[0][j]
+			joint_image += out_for_image.detach().numpy()[0][j]
 		cv2.imwrite('./test_predict/'+test_data_list[i]+'-7.jpg', out_for_image.detach().numpy()[0][6])
-		cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', sum(out_for_image.detach().numpy())[0][:6])
+		cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', joint_image)
 
 		# 计算loss
 		loss = criterion(outputs, labels.float())
