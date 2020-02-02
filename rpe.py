@@ -17,8 +17,8 @@ use_gpu = torch.cuda.is_available()
 
 img_h, img_w = 224, 224
 batch_size = 1
-lr_init = 1e-4
-max_epoch = 1
+lr_init = 1e-5
+max_epoch = 5
 
 all_data_list = os.listdir('./camera_train_data')
 test_data_list = random.sample(all_data_list, 500)
@@ -147,21 +147,22 @@ norm_trans = transforms.Compose([
 			])
 
 train_data = MyDataset(train_data_list, './camera_train_data/', norm_trans)
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, num_workers=2)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, num_workers=64)
 
 test_data = MyDataset(test_data_list, './camera_train_data/', norm_trans)
-test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, num_workers=2)
+test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, num_workers=8)
 
 net = RobotJointModel()
 if(use_gpu):
 	net = net.cuda()
 net.initialize_weights()
 
-criterion = nn.MSELoss()                                                   # 选择损失函数
+criterion = nn.SmoothL1Loss()                                                   # 选择损失函数
 if(use_gpu):
 	criterion = criterion.cuda()
-optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)     # 设置学习率下降策略
+#optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
+optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
 	loss_sigma = 0.0    # 记录一个epoch的loss之和
@@ -185,10 +186,10 @@ for epoch in range(max_epoch):
 		loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
-		# if i % 10 == 9:
-		loss_avg = loss_sigma #/ 10
-		loss_sigma = 0.0
-		print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.4f}".format(
+		if i % 10 == 9:
+		        loss_avg = loss_sigma / 10
+		        loss_sigma = 0.0
+		        print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.4f}".format(
 			epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
 	scheduler.step()  # 更新学习率
 
@@ -221,3 +222,6 @@ for epoch in range(max_epoch):
 	loss_avg = loss_sigma / len(test_loader)
 	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {:.4f}".format(
 		epoch + 1, max_epoch, loss_avg))
+
+PATH = 'joint_model_net.pth'
+torch.save(net.state_dict(), PATH)
