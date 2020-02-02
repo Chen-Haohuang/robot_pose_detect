@@ -187,12 +187,12 @@ for epoch in range(max_epoch):
 		loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
-		if i % 5 == 4:
-		        loss_avg = loss_sigma / 5
-		        loss_sigma = 0.0
-		        print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:f}".format(
+		# if i % 5 == 4:
+		loss_avg = loss_sigma #/ 5
+		loss_sigma = 0.0
+		print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:f}".format(
 			epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
-	        scheduler.step(loss)  # 更新学习率
+		scheduler.step(loss)  # 更新学习率
 
 	loss_sigma = 0.0
 	net.eval()
