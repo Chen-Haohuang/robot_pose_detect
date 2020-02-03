@@ -22,7 +22,7 @@ max_epoch = 3
 
 all_data_list = os.listdir('./camera_train_data')
 test_data_list = random.sample(all_data_list, 500)
-train_data_list = list(set(all_data_list) - set(test_data_list))[:1]
+train_data_list = list(set(all_data_list) - set(test_data_list))
 random.shuffle(test_data_list)
 random.shuffle(train_data_list)
 
