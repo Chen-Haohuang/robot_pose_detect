@@ -162,7 +162,7 @@ if(use_gpu):
 	criterion = criterion.cuda()
 #optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
 optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)     # 设置学习率下降策略
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.3)     # 设置学习率下降策略
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-7, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
@@ -193,7 +193,7 @@ for epoch in range(max_epoch):
 		print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
 			epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
 		# scheduler.step(loss)  # 更新学习率
-	scheduler.step()
+		scheduler.step()
 
 	loss_sigma = 0.0
 	net.eval()
