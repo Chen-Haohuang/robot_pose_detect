@@ -193,7 +193,7 @@ for epoch in range(max_epoch):
 		print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
 			epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
 		# scheduler.step(loss)  # 更新学习率
-		scheduler.step()
+	scheduler.step()
 
 	loss_sigma = 0.0
 	net.eval()
