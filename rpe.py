@@ -163,7 +163,7 @@ if(use_gpu):
 #optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
 optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
 #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-6, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-7, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
 	loss_sigma = 0.0    # 记录一个epoch的loss之和
@@ -190,7 +190,7 @@ for epoch in range(max_epoch):
 		# if i % 5 == 4:
 		loss_avg = loss_sigma #/ 5
 		loss_sigma = 0.0
-		print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:f}".format(
+		print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
 			epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
 		scheduler.step(loss)  # 更新学习率
 
