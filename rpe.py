@@ -18,7 +18,7 @@ use_gpu = torch.cuda.is_available()
 img_h, img_w = 224, 224
 batch_size = 16
 lr_init = 1e-5
-max_epoch = 5
+max_epoch = 3
 
 all_data_list = os.listdir('./camera_train_data')
 test_data_list = random.sample(all_data_list, 500)
@@ -162,8 +162,8 @@ if(use_gpu):
 	criterion = criterion.cuda()
 #optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
 optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
-#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-7, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)     # 设置学习率下降策略
+# scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-7, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
 	loss_sigma = 0.0    # 记录一个epoch的loss之和
@@ -192,7 +192,8 @@ for epoch in range(max_epoch):
 		loss_sigma = 0.0
 		print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
 			epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
-		scheduler.step(loss)  # 更新学习率
+		# scheduler.step(loss)  # 更新学习率
+		scheduler.step()
 
 	loss_sigma = 0.0
 	net.eval()
@@ -210,11 +211,12 @@ for epoch in range(max_epoch):
 		
 		out_for_image = outputs*255
 		out_for_image = out_for_image.cpu()
-		joint_image = np.zeros((56,56))
-		for j in range(6):
-			joint_image += out_for_image.detach().numpy()[0][j]
-		cv2.imwrite('./test_predict/'+test_data_list[i]+'-7.jpg', out_for_image.detach().numpy()[0][6])
-		cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', joint_image)
+		for b in range(batch_size):
+			joint_image = np.zeros((56,56))
+			for j in range(6):
+				joint_image += out_for_image.detach().numpy()[b][j]
+			cv2.imwrite('./test_predict/'+test_data_list[i]+'-7.jpg', out_for_image.detach().numpy()[b][6])
+			cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', joint_image)
 
 		# 计算loss
 		loss = criterion(outputs, labels.float())
