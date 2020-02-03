@@ -22,7 +22,7 @@ max_epoch = 3
 
 all_data_list = os.listdir('./camera_train_data')
 test_data_list = random.sample(all_data_list, 500)
-train_data_list = list(set(all_data_list) - set(test_data_list))
+train_data_list = list(set(all_data_list) - set(test_data_list))[:1]
 random.shuffle(test_data_list)
 random.shuffle(train_data_list)
 
@@ -214,6 +214,7 @@ for epoch in range(max_epoch):
 		for b in range(batch_size):
 			joint_image = np.zeros((56,56))
 			for j in range(6):
+                                print(b,j)
 				joint_image += out_for_image.detach().numpy()[b][j]
 			cv2.imwrite('./test_predict/'+test_data_list[i]+'-7.jpg', out_for_image.detach().numpy()[b][6])
 			cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', joint_image)
