@@ -211,10 +211,9 @@ for epoch in range(max_epoch):
 		
 		out_for_image = outputs*255
 		out_for_image = out_for_image.cpu()
-		for b in range(batch_size):
+		for b in range(len(out_for_image)):
 			joint_image = np.zeros((56,56))
 			for j in range(6):
-				print(b,j)
 				joint_image += out_for_image.detach().numpy()[b][j]
 			cv2.imwrite('./test_predict/'+test_data_list[i]+'-7.jpg', out_for_image.detach().numpy()[b][6])
 			cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', joint_image)
