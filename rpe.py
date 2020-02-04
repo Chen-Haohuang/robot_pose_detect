@@ -13,7 +13,7 @@ import target_data_generate
 import re
 
 use_gpu = torch.cuda.is_available()
-
+torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
 batch_size = 16
@@ -147,10 +147,10 @@ norm_trans = transforms.Compose([
 			])
 
 train_data = MyDataset(train_data_list, './camera_train_data/', norm_trans)
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, num_workers=64)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
 
 test_data = MyDataset(test_data_list, './camera_train_data/', norm_trans)
-test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, num_workers=64)
+test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=32)
 
 net = RobotJointModel()
 if(use_gpu):
