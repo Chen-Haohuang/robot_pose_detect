@@ -154,7 +154,7 @@ def gen_one_heatmap_target(link_state, data_index, camera_index):
     for j in range(len(link_data)):
         if( j == 0 ):
             continue
-        W = np.array([link_data[j-1] + [1.0]])
+        W = np.array([link_data[j] + [1.0]])
         W = np.transpose(W)
         C = np.dot(R_T[camera_index-1], W)
         Zc = C[2][0]
