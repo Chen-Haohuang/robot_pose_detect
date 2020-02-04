@@ -150,18 +150,18 @@ def gen_one_heatmap_target(link_state, data_index, camera_index):
         ]
 
     link_data = link_state[data_index]
-    heatmap = np.zeros((7,56,56))
+    heatmap = np.zeros((5,56,56))
     for j in range(len(link_data)):
-        W = np.array([link_data[j] + [1.0]])
+        if( j == 0 ):
+            continue
+        W = np.array([link_data[j-1] + [1.0]])
         W = np.transpose(W)
         C = np.dot(R_T[camera_index-1], W)
         Zc = C[2][0]
         u_v = np.dot(P[camera_index-1], C)
         u_v = u_v / Zc
         u_v = u_v / u_v[2][0]
-        heatmap[j] = cv2.resize(CenterGaussianHeatMap(224, 224, u_v[0][0], u_v[1][0], 3), (56,56))
-        print(link_data[j],u_v)
-    heatmap[6] = sum(heatmap[:])
+        heatmap[j-1] = cv2.resize(CenterGaussianHeatMap(224, 224, u_v[0][0], u_v[1][0], 3), (56,56))
     return heatmap
         
 
