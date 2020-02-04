@@ -134,7 +134,7 @@ class MyDataset(Dataset):
 		data_index = int(matchObj.group(2))
 		heatmap = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
 
-		return img, heatmap
+		return img, heatmap, id
 
 	def __len__(self):
 		return len(self.imgs_index)
@@ -162,7 +162,7 @@ if(use_gpu):
 	criterion = criterion.cuda()
 #optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
 optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1, last_epoch=4)     # 设置学习率下降策略
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-7, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
@@ -171,7 +171,7 @@ for epoch in range(max_epoch):
 	total = 0.0
 
 	for i, data in enumerate(train_loader):
-		inputs, labels = data
+		inputs, labels, _ = data
 		inputs, labels = torch.autograd.Variable(inputs), torch.autograd.Variable(labels)
 
 		if(use_gpu):
@@ -200,7 +200,7 @@ for epoch in range(max_epoch):
 	for i, data in enumerate(test_loader):
 
 		# 获取图片和标签
-		images, labels = data
+		images, labels, name = data
 		images, labels = torch.autograd.Variable(images), torch.autograd.Variable(labels)
 
 		if(use_gpu):
@@ -215,15 +215,15 @@ for epoch in range(max_epoch):
 			joint_image = np.zeros((56,56))
 			for j in range(6):
 				joint_image += out_for_image.detach().numpy()[b][j]
-			cv2.imwrite('./test_predict/'+test_data_list[i]+'-7.jpg', out_for_image.detach().numpy()[b][6])
-			cv2.imwrite('./test_predict/'+test_data_list[i]+'-joints.jpg', joint_image)
+			cv2.imwrite('./test_predict/'+name[b]+'-7.png', out_for_image.detach().numpy()[b][6])
+			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
 		loss = criterion(outputs, labels.float())
 		loss_sigma += loss.item()
 
 	loss_avg = loss_sigma / len(test_loader)
-	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {:.4f}".format(
+	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {:.8f}".format(
 		epoch + 1, max_epoch, loss_avg))
 
 PATH = 'joint_model_net.pth'
