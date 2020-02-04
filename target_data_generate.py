@@ -160,6 +160,7 @@ def gen_one_heatmap_target(link_state, data_index, camera_index):
         u_v = u_v / Zc
         u_v = u_v / u_v[2][0]
         heatmap[j] = cv2.resize(CenterGaussianHeatMap(224, 224, u_v[0][0], u_v[1][0], 3), (56,56))
+        print(link_data[j],u_v)
     heatmap[6] = sum(heatmap[:])
     return heatmap
         
