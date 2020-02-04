@@ -169,6 +169,7 @@ for epoch in range(max_epoch):
 	loss_sigma = 0.0    # 记录一个epoch的loss之和
 	correct = 0.0
 	total = 0.0
+	pre_i = -1
 
 	for i, data in enumerate(train_loader):
 		inputs, labels, _ = data
@@ -188,7 +189,8 @@ for epoch in range(max_epoch):
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
 		if i % 10 == 9 or i == len(train_loader)-1:
-			loss_avg = loss_sigma #/ 5
+			loss_avg = loss_sigma / (i-pre_i)
+			pre_i = i
 			loss_sigma = 0.0
 			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
 				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
