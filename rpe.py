@@ -49,13 +49,13 @@ class RobotJointModel(nn.Module):
 							nn.ReLU(),
 							nn.Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1)),
 							nn.ReLU(),
-							nn.Conv2d(512, 7, kernel_size=(1, 1), stride=(1, 1)),
+							nn.Conv2d(512, 5, kernel_size=(1, 1), stride=(1, 1)),
 							nn.Sigmoid()
 							)
 		)
 		for i in range(self.N):
 			self.stages.append(nn.Sequential(
-								nn.Conv2d(263, 128, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False),
+								nn.Conv2d(261, 128, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False),
 								nn.BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
 								nn.ReLU(),
 								nn.Conv2d(128, 128, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False),
@@ -72,7 +72,7 @@ class RobotJointModel(nn.Module):
 								nn.ReLU(),
 								nn.Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1)),
 								nn.ReLU(),
-								nn.Conv2d(512, 7, kernel_size=(1, 1), stride=(1, 1)),
+								nn.Conv2d(512, 5, kernel_size=(1, 1), stride=(1, 1)),
 								nn.Sigmoid()
 								)
 			)
