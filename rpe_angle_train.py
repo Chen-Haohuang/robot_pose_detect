@@ -15,7 +15,7 @@ import rpe_angle
 
 use_gpu = torch.cuda.is_available()
 
-batch_size = 1
+batch_size = 16
 lr_init = 1e-4
 max_epoch = 10
 
@@ -26,10 +26,10 @@ random.shuffle(test_data_list)
 random.shuffle(train_data_list)
 
 train_data = rpe_angle.MyDataset(train_data_list)
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=2)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
 
 test_data = rpe_angle.MyDataset(test_data_list)
-test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=2)
+test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
 
 net = rpe_angle.RobotAngleModel()
 if(use_gpu):
