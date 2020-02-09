@@ -58,7 +58,6 @@ for epoch in range(max_epoch):
             inputs, labels = inputs.cuda(), labels.cuda()
         optimizer.zero_grad()
         outputs = net(inputs)
-        print(outputs.shape, labels.shape)
         loss = criterion(outputs, labels.float())
         loss.backward()
         optimizer.step()
@@ -68,12 +67,12 @@ for epoch in range(max_epoch):
         loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
-        # if i % 10 == 9 or i == len(train_loader)-1:
-        loss_avg = loss_sigma / (i-pre_i)
-        pre_i = i
-        loss_sigma = 0.0
-        print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
-            epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
+        if i % 10 == 9 or i == len(train_loader)-1:
+            loss_avg = loss_sigma / (i-pre_i)
+            pre_i = i
+            loss_sigma = 0.0
+            print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
+                epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
 
     loss_sigma = 0.0
     net.eval()
