@@ -58,6 +58,7 @@ for epoch in range(max_epoch):
             inputs, labels = inputs.cuda(), labels.cuda()
         optimizer.zero_grad()
         outputs = net(inputs)
+        print(outputs.shape, labels.shape)
         loss = criterion(outputs, labels.float())
         loss.backward()
         optimizer.step()
