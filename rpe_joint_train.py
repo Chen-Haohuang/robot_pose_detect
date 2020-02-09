@@ -19,7 +19,7 @@ torch.set_num_threads(80)
 img_h, img_w = 224, 224
 batch_size = 16
 lr_init = 1e-5
-max_epoch = 20
+max_epoch = 16
 
 all_data_list = os.listdir('./camera_train_data')
 test_data_list = random.sample(all_data_list, 2000)
@@ -82,9 +82,6 @@ for epoch in range(max_epoch):
 			loss_sigma = 0.0
 			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
 				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
-		# scheduler.step(loss)  # 更新学习率
-	if epoch % 2 == 1:
-		scheduler.step()
 
 	loss_sigma = 0.0
 	net.eval()
