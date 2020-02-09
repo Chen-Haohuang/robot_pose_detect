@@ -19,7 +19,7 @@ class RobotAngleModel(nn.Module):
     def __init__(self):
         super(RobotAngleModel, self).__init__()
         self.stages = nn.Sequential(
-                            nn.Linear(51, 512),
+                            nn.Linear(15, 512),
                             nn.ReLU(),
                             nn.Linear(512, 128),
                             nn.ReLU(),
@@ -58,26 +58,19 @@ class MyDataset(Dataset):
     def __getitem__(self, index):
         data_index = self.imgs_index[index]
 
-        data = []
+        data = [0 for i in range(15)]
 
-        for camera_index in range(1,4):
-            if( camera_index == 1):
-                u_v_0 = [28.125,28.125]
-                data += [28.125,28.125]
-            else:
-                u_v_0 = [28.125,34.79884317]
-                data += [28.125,34.79884317]
-            u_v,_ = target_data_generate.gen_one_heatmap_target(self.link_state_target, data_index, camera_index)
-            for j in range(5):
-                if(j == 0):
-                    tan_value = (u_v[j][1]-u_v_0[1]) / (u_v[j][0]-u_v_0[0])
-                else:
-                    tan_value = (u_v[j][1]-u_v[j-1][1]) / (u_v[j][0]-u_v[j-1][0])
-                data.append(tan_value)
-                data.append(u_v[j][0])
-                data.append(u_v[j][1])
+        u_v,_ = target_data_generate.gen_one_heatmap_target(self.link_state_target, data_index, 2)
+        for j in range(5):
+            data[2+j*3] = u_v[j][0]
+        
+        u_v,_ = target_data_generate.gen_one_heatmap_target(self.link_state_target, data_index, 2)
+        for j in range(5):
+            data[j*3] = u_v[j][0]
+            data[1+j*3] = u_v[j][1]
 
         data = np.array(data, dtype=np.float32)
+
         label = self.joint_state_target[data_index]
         label = np.array(label, dtype=np.float32)
         label = np.reshape(label, (6,))
