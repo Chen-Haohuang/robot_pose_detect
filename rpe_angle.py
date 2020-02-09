@@ -80,6 +80,7 @@ class MyDataset(Dataset):
         data = np.array(data, dtype=np.float32)
         label = self.joint_state_target[data_index]
         label = np.array(label, dtype=np.float32)
+        label = np.reshape(label, (6,))
 
         return data , label, data_index
 
