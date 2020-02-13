@@ -18,10 +18,11 @@ torch.set_num_threads(80)
 img_h, img_w = 224, 224
 batch_size = 16
 lr_init = 1e-5
-max_epoch = 20
+max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
-test_data_list = random.sample(all_data_list, 2000)
+all_data_list = [a for a in all_data_list if 'camera3' not in a]
+test_data_list = random.sample(all_data_list, 1600)
 train_data_list = list(set(all_data_list) - set(test_data_list))
 random.shuffle(test_data_list)
 random.shuffle(train_data_list)
@@ -194,9 +195,7 @@ for epoch in range(max_epoch):
 			loss_sigma = 0.0
 			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
 				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
-		# scheduler.step(loss)  # 更新学习率
-	if epoch % 2 == 1:
-		scheduler.step()
+		#scheduler.step()
 
 	loss_sigma = 0.0
 	net.eval()
