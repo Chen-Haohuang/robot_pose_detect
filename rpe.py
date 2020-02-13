@@ -133,7 +133,7 @@ class MyDataset(Dataset):
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
 		data_index = int(matchObj.group(2))
-		heatmap = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
+		_, heatmap = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
 
 		return img, heatmap, id
 
