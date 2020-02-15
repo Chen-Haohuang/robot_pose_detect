@@ -162,7 +162,8 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)  
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-7, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
-	loss_sigma = 0.0    # 记录一个epoch的loss之和
+	euc_loss_sigma = 0.0
+	reg_loss_sigma = 0.0    # 记录一个epoch的loss之和
 	correct = 0.0
 	total = 0.0
 	pre_i = -1
@@ -188,19 +189,23 @@ for epoch in range(max_epoch):
 		optimizer.step()
 
 		if(use_gpu):
-			loss = loss.cpu()
-		loss_sigma += loss.item()
+			euc_loss = euc_losses.cpu()
+			reg_loss = reg_losses.cpu()
+		euc_loss_sigma += euc_loss.item()
+		reg_loss_sigma += reg_loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
 		if i % 10 == 9 or i == len(train_loader)-1:
-			loss_avg = loss_sigma / (i-pre_i)
+			euc_loss_avg = euc_loss_sigma / (i-pre_i)
+			reg_loss_avg = reg_loss_sigma / (i-pre_i)
 			pre_i = i
 			loss_sigma = 0.0
-			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
-				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
+			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
+				epoch + 1, max_epoch, i + 1, len(train_loader), euc_loss_avg, reg_loss_avg))
 		#scheduler.step()
 
-	loss_sigma = 0.0
+	euc_loss_sigma = 0.0
+	reg_loss_sigma = 0.0
 	net.eval()
 	for i, data in enumerate(test_loader):
 		images, coord_labels, heatmaps_labels, name = data
@@ -227,11 +232,13 @@ for epoch in range(max_epoch):
 		reg_losses = criterion(heatmaps, heatmaps_labels.float())
 		loss = euc_losses + reg_losses
 
-		loss_sigma += loss.item()
+		euc_loss_sigma += euc_loss.item()
+		reg_loss_sigma += reg_loss.item()
 
-	loss_avg = loss_sigma / len(test_loader)
-	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {:.8f}".format(
-		epoch + 1, max_epoch, loss_avg))
+	euc_loss_avg = euc_loss_sigma / len(test_loader)
+	reg_loss_avg = reg_loss_sigma / len(test_loader)
+	print("Testing: Epoch[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
+		epoch + 1, max_epoch, euc_loss_avg, reg_loss_avg))
 
 PATH = 'joint_model_net.pth'
 torch.save(net.state_dict(), PATH)
