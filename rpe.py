@@ -13,13 +13,13 @@ import target_data_generate
 import re
 import dsntnn
 
-use_gpu = False#torch.cuda.is_available()
+use_gpu = torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 1
+batch_size = 16
 lr_init = 1e-5
-num_workers_init = 1
+num_workers_init = 32
 max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
@@ -175,7 +175,7 @@ for epoch in range(max_epoch):
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
 
 		if(use_gpu):
-			inputs, coord_labels = inputs.cuda(), coord_labels.cuda()
+			inputs, coord_labels, heatmaps_labels = inputs.cuda(), coord_labels.cuda(), heatmaps_labels.cuda()
 
 		coords, heatmaps = net(inputs)
 
@@ -204,12 +204,12 @@ for epoch in range(max_epoch):
 	net.eval()
 	for i, data in enumerate(test_loader):
 		images, coord_labels, heatmaps_labels, name = data
-		images, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
+		images, coord_labels, heatmaps_labels = torch.autograd.Variable(images), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
 
 		if(use_gpu):
-			images, coord_labels = inputs.cuda(), coord_labels.cuda()
+			images, coord_labels, heatmaps_labels = images.cuda(), coord_labels.cuda(), heatmaps_labels.cuda()
 
 		# forward
 		coords, heatmaps = net(images)
