@@ -199,7 +199,8 @@ for epoch in range(max_epoch):
 			euc_loss_avg = euc_loss_sigma / (i-pre_i)
 			reg_loss_avg = reg_loss_sigma / (i-pre_i)
 			pre_i = i
-			loss_sigma = 0.0
+			euc_loss_sigma = 0.0
+			reg_loss_sigma = 0.0
 			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
 				epoch + 1, max_epoch, i + 1, len(train_loader), euc_loss_avg, reg_loss_avg))
 		#scheduler.step()
