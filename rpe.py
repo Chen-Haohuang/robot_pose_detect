@@ -86,6 +86,8 @@ class RobotJointModel(nn.Module):
 
 	def DSNT(self, heatmap):
 		output = torch.zeros((1,5,2))
+		if(use_gpu):
+			output.cuda()
 		for joint_index in range(self.joint_num):
 			output[0][joint_index][0] = torch.sum(heatmap[0][joint_index].mul(self.X))
 			output[0][joint_index][1] = torch.sum(heatmap[0][joint_index].mul(self.Y))
