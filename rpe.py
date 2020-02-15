@@ -93,7 +93,7 @@ class RobotJointModel(nn.Module):
 		heatmaps = dsntnn.flat_softmax(stage_output)
 		coords = dsntnn.dsnt(heatmaps)
 
-		return coords, heatmaps
+		return coords, stage_output
 
 	def _initialize_weights(self, m):
 		if isinstance(m, nn.Conv2d):
@@ -208,6 +208,7 @@ for epoch in range(max_epoch):
 		images, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
+		heatmaps_labels = dsntnn.flat_softmax(heatmaps_labels)
 
 		if(use_gpu):
 			images, coord_labels = inputs.cuda(), coord_labels.cuda()
