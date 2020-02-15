@@ -93,7 +93,7 @@ class RobotJointModel(nn.Module):
 		heatmaps = dsntnn.flat_softmax(stage_output)
 		coords = dsntnn.dsnt(heatmaps)
 
-		return coords, stage_output
+		return coords, heatmaps
 
 	def _initialize_weights(self, m):
 		if isinstance(m, nn.Conv2d):
@@ -180,9 +180,9 @@ for epoch in range(max_epoch):
 
 		coords, heatmaps = net(inputs)
 
-		euc_losses = criterion(coords, coord_labels.float())
-		reg_losses = criterion(heatmaps, heatmaps_labels.float())
-		loss = euc_losses + reg_losses
+		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=1.0)
+		loss = dsntnn.average_loss(euc_losses, reg_losses)
 
 		optimizer.zero_grad()
 		loss.backward()
@@ -191,8 +191,8 @@ for epoch in range(max_epoch):
 		if(use_gpu):
 			euc_loss = euc_losses.cpu()
 			reg_loss = reg_losses.cpu()
-		euc_loss_sigma += euc_loss.item()
-		reg_loss_sigma += reg_loss.item()
+		euc_loss_sigma += dsntnn.average_loss(euc_losses).item()
+		reg_loss_sigma += dsntnn.average_loss(reg_losses).item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
 		if i % 10 == 9 or i == len(train_loader)-1:
@@ -229,12 +229,12 @@ for epoch in range(max_epoch):
 			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
-		euc_losses = criterion(coords, coord_labels.float())
-		reg_losses = criterion(heatmaps, heatmaps_labels.float())
-		loss = euc_losses + reg_losses
+		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=1.0)
+		loss = dsntnn.average_loss(euc_losses + reg_losses)
 
-		euc_loss_sigma += euc_loss.item()
-		reg_loss_sigma += reg_loss.item()
+		euc_loss_sigma += dsntnn.average_loss(euc_losses).item()
+		reg_loss_sigma += dsntnn.average_loss(reg_losses).item()
 
 	euc_loss_avg = euc_loss_sigma / len(test_loader)
 	reg_loss_avg = reg_loss_sigma / len(test_loader)
