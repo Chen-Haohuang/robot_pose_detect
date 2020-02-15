@@ -128,9 +128,10 @@ class MyDataset(Dataset):
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
 		data_index = int(matchObj.group(2))
-		u_v, heatmap = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
+		coords, heatmaps = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
+		heatmaps = dsntnn.flat_softmax(heatmaps)
 
-		return img, u_v, heatmap, id
+		return img, coords, heatmaps, id
 
 	def __len__(self):
 		return len(self.imgs_index)
