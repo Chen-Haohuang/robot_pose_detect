@@ -17,9 +17,9 @@ use_gpu = False#torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 16
+batch_size = 1
 lr_init = 1e-5
-num_workers_init = 64
+num_workers_init = 1
 max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
@@ -153,9 +153,9 @@ if(use_gpu):
 	net = net.cuda()
 net.initialize_weights()
 
-heatmap_criterion = nn.SmoothL1Loss()                                                   # 选择损失函数
+criterion = nn.SmoothL1Loss()                                                   # 选择损失函数
 if(use_gpu):
-	heatmap_criterion = heatmap_criterion.cuda()
+	criterion = criterion.cuda()
 #optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
 optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
@@ -169,7 +169,7 @@ for epoch in range(max_epoch):
 
 	for i, data in enumerate(train_loader):
 		inputs, coord_labels, heatmaps_labels, _ = data
-
+		
 		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
@@ -180,7 +180,7 @@ for epoch in range(max_epoch):
 		coords, heatmaps = net(inputs)
 
 		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
-		reg_losses = heatmap_criterion(heatmaps, heatmaps_labels.float())
+		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t = 1.0)
 		loss = dsntnn.average_loss(euc_losses + reg_losses)
 
 		optimizer.zero_grad()
@@ -224,7 +224,7 @@ for epoch in range(max_epoch):
 
 		# 计算loss
 		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
-		reg_losses = heatmap_criterion(heatmaps, heatmaps_labels.float())
+		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t = 1.0)
 		loss = dsntnn.average_loss(euc_losses + reg_losses)
 
 		loss_sigma += loss.item()
