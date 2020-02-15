@@ -173,14 +173,14 @@ for epoch in range(max_epoch):
 		
 		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 
-		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
+		coord_labels_norm = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
 
 		if(use_gpu):
-			inputs, coord_labels, heatmaps_labels = inputs.cuda(), coord_labels.cuda(), heatmaps_labels.cuda()
+			inputs, coord_labels, coord_labels_norm, heatmaps_labels = inputs.cuda(), coord_labels.cuda(), coord_labels_norm.cuda(), heatmaps_labels.cuda()
 
 		coords, heatmaps = net(inputs)
 
-		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		euc_losses = dsntnn.euclidean_losses(coords, coord_labels_norm)
 		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=1.0)
 		loss = dsntnn.average_loss(euc_losses, reg_losses)
 
@@ -212,10 +212,10 @@ for epoch in range(max_epoch):
 		images, coord_labels, heatmaps_labels, name = data
 		images, coord_labels, heatmaps_labels = torch.autograd.Variable(images), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 
-		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
+		coord_labels_norm = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
 
 		if(use_gpu):
-			images, coord_labels, heatmaps_labels = images.cuda(), coord_labels.cuda(), heatmaps_labels.cuda()
+			images, coord_labels, coord_labels_norm, heatmaps_labels = images.cuda(), coord_labels.cuda(), coord_labels_norm.cuda(), heatmaps_labels.cuda()
 
 		# forward
 		coords, heatmaps = net(images)
@@ -229,7 +229,7 @@ for epoch in range(max_epoch):
 			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
-		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		euc_losses = dsntnn.euclidean_losses(coords, coord_labels_norm)
 		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=1.0)
 		loss = dsntnn.average_loss(euc_losses + reg_losses)
 
