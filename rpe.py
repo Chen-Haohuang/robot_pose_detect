@@ -13,11 +13,11 @@ import target_data_generate
 import re
 import dsntnn
 
-use_gpu = False#torch.cuda.is_available()
+use_gpu = torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 1
+batch_size = 16
 lr_init = 1e-5
 max_epoch = 50
 
@@ -142,10 +142,10 @@ norm_trans = transforms.Compose([
 			])
 
 train_data = MyDataset(train_data_list, './camera_train_data/', norm_trans)
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=1)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
 
 test_data = MyDataset(test_data_list, './camera_train_data/', norm_trans)
-test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=1)
+test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
 
 net = RobotJointModel()
 if(use_gpu):
@@ -167,14 +167,21 @@ for epoch in range(max_epoch):
 	pre_i = -1
 
 	for i, data in enumerate(train_loader):
-		inputs, labels, heatmap, _ = data
-		inputs, labels = torch.autograd.Variable(inputs), torch.autograd.Variable(labels)
+		inputs, coord_labels, heatmaps_labels, _ = data
+		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
+
+		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
 
 		if(use_gpu):
-			inputs, labels = inputs.cuda(), labels.cuda()
-		optimizer.zero_grad()
+			inputs, coord_labels = inputs.cuda(), coord_labels.cuda()
+
 		coords, heatmaps = net(inputs)
-		loss = criterion(coords, labels.float())
+
+		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t = 1.0)
+		loss = dsntnn.average_loss(euc_losses + reg_losses)
+
+		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
 
@@ -194,13 +201,13 @@ for epoch in range(max_epoch):
 	loss_sigma = 0.0
 	net.eval()
 	for i, data in enumerate(test_loader):
+		images, coord_labels, heatmaps_labels, name = data
+		images, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 
-		# 获取图片和标签
-		images, labels, heatmap, name = data
-		images, labels = torch.autograd.Variable(images), torch.autograd.Variable(labels)
+		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
 
 		if(use_gpu):
-			images, labels = images.cuda(), labels.cuda()
+			images, coord_labels = inputs.cuda(), coord_labels.cuda()
 
 		# forward
 		coords, heatmaps = net(images)
@@ -214,7 +221,10 @@ for epoch in range(max_epoch):
 			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
-		loss = criterion(coords, labels.float())
+		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t = 1.0)
+		loss = dsntnn.average_loss(euc_losses + reg_losses)
+
 		loss_sigma += loss.item()
 
 	loss_avg = loss_sigma / len(test_loader)

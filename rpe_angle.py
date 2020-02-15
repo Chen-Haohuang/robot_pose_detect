@@ -45,6 +45,13 @@ P = [
             ])
     ]
 
+X = np.zeros((56,56))
+Y = np.zeros((56,56))
+for i in range(56):
+    for j in range(56):
+        X[i][j] = (2.0*j-57.0)/56.0
+        Y[i][j] = (2.0*i-57.0)/56.0
+
 def angle1(joint2_pos):
     joint2_pos_init = np.array([0.030000,0.000000,0.380000])
 
@@ -194,7 +201,7 @@ def pixel2world(u_v_1, u_v_2, R_T_1, R_T_2, P_1, P_2):
 
     return x[0]
 
-def model_predict2angle(heatmap_1, heatmap_2, heatmap_3):
+def model_predict2angle(u_v_1, u_v_2, u_v_3):
     R_T = [
             np.array([
                 [0.0, -1.0, 0.0, 0.0], 
@@ -235,40 +242,10 @@ def model_predict2angle(heatmap_1, heatmap_2, heatmap_3):
 
     joint_pos = np.zeros((5,3))
     for joint_index in range(5):
-        u_v = np.zeros((3,2))
-        max_pixel = 0
-        max_u = 0
-        max_v = 0
-        for i in range(224):
-            for j in range(224):
-                if(heatmap_1[joint_index][i][j] > max_pixel):
-                    max_pixel = heatmap_1[joint_index][i][j]
-                    max_u = j
-                    max_v = i
-        u_v[0][0] = max_u
-        u_v[0][1] = max_v
-        max_pixel = 0
-        max_u = 0
-        max_v = 0
-        for i in range(224):
-            for j in range(224):
-                if(heatmap_2[joint_index][i][j] > max_pixel):
-                    max_pixel = heatmap_2[joint_index][i][j]
-                    max_u = j
-                    max_v = i
-        u_v[1][0] = max_u
-        u_v[1][1] = max_v
-        max_pixel = 0
-        max_u = 0
-        max_v = 0
-        for i in range(224):
-            for j in range(224):
-                if(heatmap_3[joint_index][i][j] > max_pixel):
-                    max_pixel = heatmap_3[joint_index][i][j]
-                    max_u = j
-                    max_v = i
-        u_v[2][0] = max_u
-        u_v[2][1] = max_v
+        u_v = np.zeros((5,2))
+        u_v[0] = u_v_1[joint_index]*4.0
+        u_v[1] = u_v_2[joint_index]*4.0
+        u_v[2] = u_v_3[joint_index]*4.0
         print("=====",u_v[0],u_v[1],u_v[2])
         print(pixel2world(u_v[0], u_v[1], R_T[0], R_T[1], P[0], P[1]))
         print(pixel2world(u_v[0], u_v[2], R_T[0], R_T[2], P[0], P[2]))
@@ -298,14 +275,6 @@ u_v_1, heatmap_1 = target_data_generate.gen_one_heatmap_target(link_state_target
 u_v_2, heatmap_2 = target_data_generate.gen_one_heatmap_target(link_state_target, 9, 2)
 u_v_3, heatmap_3 = target_data_generate.gen_one_heatmap_target(link_state_target, 9, 3)
 
-heatmap_1_new = np.zeros((5,224,224))
-heatmap_2_new = np.zeros((5,224,224))
-heatmap_3_new = np.zeros((5,224,224))
-for joint_index in range(5):
-    heatmap_1_new[joint_index] = cv2.resize(heatmap_1[joint_index], (224,224))
-    heatmap_2_new[joint_index] = cv2.resize(heatmap_2[joint_index], (224,224))
-    heatmap_3_new[joint_index] = cv2.resize(heatmap_3[joint_index], (224,224))
-
 print(u_v_1[0]*4.0, u_v_2[0]*4.0, u_v_3[0]*4.0)
 print("!!!!!!!!!!!",pixel2world(u_v_1[0]*4.0, u_v_3[0]*4.0, R_T[0], R_T[2], P[0], P[2]))
 
@@ -313,7 +282,7 @@ print("!!!!!!!!!!!",pixel2world(u_v_1[0]*4.0, u_v_3[0]*4.0, R_T[0], R_T[2], P[0]
 # print(u_v_2)
 # print(u_v_3)
 
-a = model_predict2angle(heatmap_1_new, heatmap_2_new, heatmap_3_new)
+a = model_predict2angle(u_v_1, u_v_2, u_v_3)
 print(a)
 
 link_state_target = target_data_generate.gen_link_state_target()
