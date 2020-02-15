@@ -13,13 +13,13 @@ import target_data_generate
 import re
 import dsntnn
 
-use_gpu = False#torch.cuda.is_available()
+use_gpu = torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 1
+batch_size = 16
 lr_init = 1e-5
-num_workers_init = 1
+num_workers_init = 32
 max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
@@ -179,9 +179,9 @@ for epoch in range(max_epoch):
 
 		coords, heatmaps = net(inputs)
 
-		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		euc_losses = criterion(coords, coord_labels.float())
 		reg_losses = criterion(heatmaps, heatmaps_labels.float())
-		loss = dsntnn.average_loss(euc_losses) + reg_losses
+		loss = euc_losses + reg_losses
 
 		optimizer.zero_grad()
 		loss.backward()
@@ -223,9 +223,9 @@ for epoch in range(max_epoch):
 			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
-		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		euc_losses = criterion(coords, coord_labels.float())
 		reg_losses = criterion(heatmaps, heatmaps_labels.float())
-		loss = dsntnn.average_loss(euc_losses) + reg_losses
+		loss = euc_losses + reg_losses
 
 		loss_sigma += loss.item()
 
