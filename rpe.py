@@ -93,7 +93,7 @@ class RobotJointModel(nn.Module):
 		heatmaps = dsntnn.flat_softmax(stage_output)
 		coords = dsntnn.dsnt(heatmaps)
 
-		return coords, heatmaps
+		return coords, stage_output
 
 	def _initialize_weights(self, m):
 		if isinstance(m, nn.Conv2d):
