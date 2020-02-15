@@ -180,7 +180,7 @@ for epoch in range(max_epoch):
 		coords, heatmaps = net(inputs)
 
 		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
-		reg_losses = criterion(heatmaps, heatmaps_labels)
+		reg_losses = criterion(heatmaps, heatmaps_labels.float())
 		loss = euc_losses + reg_losses
 
 		optimizer.zero_grad()
@@ -224,7 +224,7 @@ for epoch in range(max_epoch):
 
 		# 计算loss
 		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
-		reg_losses = criterion(heatmaps, heatmaps_labels)
+		reg_losses = criterion(heatmaps, heatmaps_labels.float())
 		loss = euc_losses + reg_losses
 
 		loss_sigma += loss.item()
