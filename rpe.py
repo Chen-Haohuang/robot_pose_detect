@@ -121,8 +121,10 @@ class MyDataset(Dataset):
 	def __getitem__(self, index):
 		id = self.imgs_index[index]
 		fn = self.path + id
-		img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
-		img = self.transform(img)   # 在这里做transform，转为tensor等等
+		# img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
+		# img = self.transform(img)   # 在这里做transform，转为tensor等等
+		img = torch.from_numpy(cv2.imread(fn)).permute(2, 0, 1).float()
+		img = img.div(255)
 
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
@@ -168,6 +170,7 @@ for epoch in range(max_epoch):
 
 	for i, data in enumerate(train_loader):
 		inputs, coord_labels, heatmaps_labels, _ = data
+
 		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
