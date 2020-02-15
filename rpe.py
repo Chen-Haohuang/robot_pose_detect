@@ -182,7 +182,7 @@ for epoch in range(max_epoch):
 
 		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
 		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=3.0)
-		loss = dsntnn.average_loss(euc_losses, reg_losses)
+		loss = dsntnn.average_loss(euc_losses + reg_losses)
 
 		optimizer.zero_grad()
 		loss.backward()
