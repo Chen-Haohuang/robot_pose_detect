@@ -12,17 +12,16 @@ import matplotlib.pyplot as plt
 import target_data_generate
 import re
 
-use_gpu = torch.cuda.is_available()
+use_gpu = False #torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 16
+batch_size = 1
 lr_init = 1e-5
 max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
-all_data_list = [a for a in all_data_list if 'camera3' not in a]
-test_data_list = random.sample(all_data_list, 1600)
+test_data_list = random.sample(all_data_list, 2000)
 train_data_list = list(set(all_data_list) - set(test_data_list))
 random.shuffle(test_data_list)
 random.shuffle(train_data_list)
@@ -36,6 +35,7 @@ class RobotJointModel(nn.Module):
 		super(RobotJointModel, self).__init__()
 		self.N = 5
 		self.M = 1
+		self.joint_num = 5
 		self.features = torchvision.models.vgg16(pretrained=True).features[:12]
 		self.stages = nn.ModuleList()
 		self.stages.append(nn.Sequential(
@@ -77,7 +77,20 @@ class RobotJointModel(nn.Module):
 								nn.Sigmoid()
 								)
 			)
+		self.X = torch.zeros((56,56))
+		self.Y = torch.zeros((56,56))
+		for i in range(56):
+			for j in range(56):
+				self.X[i][j] = (2.0*j-57.0)/56.0
+				self.Y[i][j] = (2.0*i-57.0)/56.0
 
+	def DSNT(self, heatmap):
+		output = torch.zeros((1,5,2))
+		for joint_index in range(self.joint_num):
+			output[0][joint_index][0] = torch.sum(heatmap[0][joint_index].mul(self.X))
+			output[0][joint_index][1] = torch.sum(heatmap[0][joint_index].mul(self.Y))
+
+		return output
 
 	def forward(self, inputs):
 		VGG_output = self.features(inputs)
@@ -89,7 +102,9 @@ class RobotJointModel(nn.Module):
 				stage_output = self.stages[i](stage_input)
 				stage_input = torch.cat((VGG_output, stage_output), 1)
 		
-		return stage_output
+		DSNT_output = self.DSNT(stage_output)
+
+		return stage_output, DSNT_output
 
 	def _initialize_weights(self, m):
 		if isinstance(m, nn.Conv2d):
@@ -108,15 +123,6 @@ class RobotJointModel(nn.Module):
 			for m in s:
 				self._initialize_weights(m)
 
-class CustomLoss(torch.nn.Module):
-	def __init__(self):
-		super(CustomLoss,self).__init__()
-
-	def forward(self,x,y):
-		loss = torch.norm(x-y, p=1)
-		return loss
-		
-
 class MyDataset(Dataset):
 	def __init__(self, data_list, path, transform):
 		imgs_index = data_list
@@ -133,9 +139,9 @@ class MyDataset(Dataset):
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
 		data_index = int(matchObj.group(2))
-		_, heatmap = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
+		u_v, heatmap = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
 
-		return img, heatmap, id
+		return img, u_v, heatmap, id
 
 	def __len__(self):
 		return len(self.imgs_index)
@@ -148,10 +154,10 @@ norm_trans = transforms.Compose([
 			])
 
 train_data = MyDataset(train_data_list, './camera_train_data/', norm_trans)
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=1)
 
 test_data = MyDataset(test_data_list, './camera_train_data/', norm_trans)
-test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
+test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=1)
 
 net = RobotJointModel()
 if(use_gpu):
@@ -173,14 +179,14 @@ for epoch in range(max_epoch):
 	pre_i = -1
 
 	for i, data in enumerate(train_loader):
-		inputs, labels, _ = data
+		inputs, labels, heatmap, _ = data
 		inputs, labels = torch.autograd.Variable(inputs), torch.autograd.Variable(labels)
 
 		if(use_gpu):
 			inputs, labels = inputs.cuda(), labels.cuda()
 		optimizer.zero_grad()
-		outputs = net(inputs)
-		loss = criterion(outputs, labels.float())
+		heatmap_output, DSNT_output = net(inputs)
+		loss = criterion(DSNT_output, labels.float())
 		loss.backward()
 		optimizer.step()
 
@@ -202,16 +208,16 @@ for epoch in range(max_epoch):
 	for i, data in enumerate(test_loader):
 
 		# 获取图片和标签
-		images, labels, name = data
+		images, labels, heatmap, name = data
 		images, labels = torch.autograd.Variable(images), torch.autograd.Variable(labels)
 
 		if(use_gpu):
 			images, labels = images.cuda(), labels.cuda()
 
 		# forward
-		outputs = net(images)
+		heatmap_output, DSNT_output = net(images)
 		
-		out_for_image = outputs*255
+		out_for_image = heatmap_output*255
 		out_for_image = out_for_image.cpu()
 		for b in range(len(out_for_image)):
 			joint_image = np.zeros((56,56))
@@ -220,7 +226,7 @@ for epoch in range(max_epoch):
 			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
-		loss = criterion(outputs, labels.float())
+		loss = criterion(DSNT_output, labels.float())
 		loss_sigma += loss.item()
 
 	loss_avg = loss_sigma / len(test_loader)
