@@ -12,11 +12,11 @@ import matplotlib.pyplot as plt
 import target_data_generate
 import re
 
-use_gpu = False #torch.cuda.is_available()
+use_gpu = torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 1
+batch_size = 16
 lr_init = 1e-5
 max_epoch = 50
 
@@ -77,17 +77,22 @@ class RobotJointModel(nn.Module):
 								nn.Sigmoid()
 								)
 			)
-		self.X = torch.zeros((56,56))
-		self.Y = torch.zeros((56,56))
+		if(use_gpu):
+			self.X = torch.zeros((56,56), device='cuda')
+			self.Y = torch.zeros((56,56), device='cuda')
+		else:
+			self.X = torch.zeros((56,56))
+			self.Y = torch.zeros((56,56))
 		for i in range(56):
 			for j in range(56):
 				self.X[i][j] = (2.0*j-57.0)/56.0
 				self.Y[i][j] = (2.0*i-57.0)/56.0
 
 	def DSNT(self, heatmap):
-		output = torch.zeros((1,5,2))
 		if(use_gpu):
-			output.cuda()
+			output = torch.zeros((1,5,2), device='cuda')
+		else:
+			output = torch.zeros((1,5,2))
 		for joint_index in range(self.joint_num):
 			output[0][joint_index][0] = torch.sum(heatmap[0][joint_index].mul(self.X))
 			output[0][joint_index][1] = torch.sum(heatmap[0][joint_index].mul(self.Y))
@@ -156,10 +161,10 @@ norm_trans = transforms.Compose([
 			])
 
 train_data = MyDataset(train_data_list, './camera_train_data/', norm_trans)
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=1)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
 
 test_data = MyDataset(test_data_list, './camera_train_data/', norm_trans)
-test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=1)
+test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
 
 net = RobotJointModel()
 if(use_gpu):
