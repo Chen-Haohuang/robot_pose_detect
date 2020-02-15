@@ -129,7 +129,6 @@ class MyDataset(Dataset):
 		camera_index = int(matchObj.group(1))
 		data_index = int(matchObj.group(2))
 		coords, heatmaps = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
-		heatmaps = dsntnn.flat_softmax(heatmaps)
 
 		return img, coords, heatmaps, id
 
@@ -174,6 +173,7 @@ for epoch in range(max_epoch):
 		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
+		heatmaps_labels = dsntnn.flat_softmax(heatmaps_labels)
 
 		if(use_gpu):
 			inputs, coord_labels = inputs.cuda(), coord_labels.cuda()
