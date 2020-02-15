@@ -13,12 +13,13 @@ import target_data_generate
 import re
 import dsntnn
 
-use_gpu = torch.cuda.is_available()
+use_gpu = False#torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
 batch_size = 16
 lr_init = 1e-5
+num_workers_init = 64
 max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
@@ -121,10 +122,8 @@ class MyDataset(Dataset):
 	def __getitem__(self, index):
 		id = self.imgs_index[index]
 		fn = self.path + id
-		# img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
-		# img = self.transform(img)   # 在这里做transform，转为tensor等等
-		img = torch.from_numpy(cv2.imread(fn)).permute(2, 0, 1).float()
-		img = img.div(255)
+		img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
+		img = self.transform(img)   # 在这里做transform，转为tensor等等
 
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
@@ -144,19 +143,19 @@ norm_trans = transforms.Compose([
 			])
 
 train_data = MyDataset(train_data_list, './camera_train_data/', norm_trans)
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers_init)
 
 test_data = MyDataset(test_data_list, './camera_train_data/', norm_trans)
-test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=64)
+test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=num_workers_init)
 
 net = RobotJointModel()
 if(use_gpu):
 	net = net.cuda()
 net.initialize_weights()
 
-criterion = nn.SmoothL1Loss()                                                   # 选择损失函数
+heatmap_criterion = nn.SmoothL1Loss()                                                   # 选择损失函数
 if(use_gpu):
-	criterion = criterion.cuda()
+	heatmap_criterion = heatmap_criterion.cuda()
 #optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
 optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
@@ -181,7 +180,7 @@ for epoch in range(max_epoch):
 		coords, heatmaps = net(inputs)
 
 		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
-		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t = 1.0)
+		reg_losses = heatmap_criterion(heatmaps, heatmaps_labels.float())
 		loss = dsntnn.average_loss(euc_losses + reg_losses)
 
 		optimizer.zero_grad()
@@ -225,7 +224,7 @@ for epoch in range(max_epoch):
 
 		# 计算loss
 		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
-		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t = 1.0)
+		reg_losses = heatmap_criterion(heatmaps, heatmaps_labels.float())
 		loss = dsntnn.average_loss(euc_losses + reg_losses)
 
 		loss_sigma += loss.item()
