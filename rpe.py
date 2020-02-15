@@ -234,7 +234,7 @@ for epoch in range(max_epoch):
 		loss = dsntnn.average_loss(euc_losses) + reg_losses
 
 		euc_loss_sigma += dsntnn.average_loss(euc_losses).item()
-		reg_loss_sigma += reg_losses).item()
+		reg_loss_sigma += reg_losses.item()
 
 	euc_loss_avg = euc_loss_sigma / len(test_loader)
 	reg_loss_avg = reg_loss_sigma / len(test_loader)
