@@ -12,19 +12,20 @@ import matplotlib.pyplot as plt
 import target_data_generate
 import re
 import dsntnn
+# torch.set_printoptions(threshold=100000000000, linewidth=10000000000)
 
 use_gpu = torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 16
+batch_size = 1
 lr_init = 1e-5
-num_workers_init = 64
+num_workers_init = 1
 max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
-test_data_list = random.sample(all_data_list, 2000)
-train_data_list = list(set(all_data_list) - set(test_data_list))
+test_data_list = random.sample(all_data_list, 2000)[:1]
+train_data_list = list(set(all_data_list) - set(test_data_list))[:1]
 random.shuffle(test_data_list)
 random.shuffle(train_data_list)
 
@@ -93,7 +94,7 @@ class RobotJointModel(nn.Module):
 		heatmaps = dsntnn.flat_softmax(stage_output)
 		coords = dsntnn.dsnt(heatmaps)
 
-		return coords, stage_output
+		return coords, heatmaps
 
 	def _initialize_weights(self, m):
 		if isinstance(m, nn.Conv2d):
@@ -122,8 +123,9 @@ class MyDataset(Dataset):
 	def __getitem__(self, index):
 		id = self.imgs_index[index]
 		fn = self.path + id
-		img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
-		img = self.transform(img)   # 在这里做transform，转为tensor等等
+
+		img = torch.from_numpy(cv2.imread(fn)).permute(2,0,1).float()
+		img = img.div(255)
 
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
@@ -135,6 +137,14 @@ class MyDataset(Dataset):
 	def __len__(self):
 		return len(self.imgs_index)
 
+def CenterGaussianHeatMap(img_height, img_width, c_x, c_y, variance):
+        gaussian_map = np.zeros((img_height, img_width))
+        for x_p in range(img_width):
+            for y_p in range(img_height):
+                dist_sq = (x_p - c_x) * (x_p - c_x) + (y_p - c_y) * (y_p - c_y)
+                exponent = dist_sq / 2.0 / variance / variance
+                gaussian_map[y_p, x_p] = np.exp(-exponent)
+        return gaussian_map
 
 means, stdevs = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 norm_trans = transforms.Compose([
@@ -164,6 +174,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)  
 for epoch in range(max_epoch):
 	euc_loss_sigma = 0.0
 	reg_loss_sigma = 0.0    # 记录一个epoch的loss之和
+	loss_sigma = 0.0
 	correct = 0.0
 	total = 0.0
 	pre_i = -1
@@ -180,9 +191,9 @@ for epoch in range(max_epoch):
 
 		coords, heatmaps = net(inputs)
 
-		euc_losses = criterion(coords, coord_labels.float())
-		reg_losses = criterion(heatmaps, heatmaps_labels.float())
-		loss = euc_losses + reg_losses
+		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=1.0)
+		loss = dsntnn.average_loss(euc_losses)
 
 		optimizer.zero_grad()
 		loss.backward()
@@ -191,22 +202,27 @@ for epoch in range(max_epoch):
 		if(use_gpu):
 			euc_loss = euc_losses.cpu()
 			reg_loss = reg_losses.cpu()
-		euc_loss_sigma += euc_losses.item()
-		reg_loss_sigma += reg_losses.item()
+			loss = loss.cpu()
+		euc_loss_sigma += dsntnn.average_loss(euc_losses).item()
+		reg_loss_sigma += dsntnn.average_loss(reg_losses).item()
+		loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
 		if i % 10 == 9 or i == len(train_loader)-1:
 			euc_loss_avg = euc_loss_sigma / (i-pre_i)
 			reg_loss_avg = reg_loss_sigma / (i-pre_i)
+			loss_avg = loss_sigma / (i-pre_i)
 			pre_i = i
 			euc_loss_sigma = 0.0
 			reg_loss_sigma = 0.0
-			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
-				epoch + 1, max_epoch, i + 1, len(train_loader), euc_loss_avg, reg_loss_avg))
+			loss_sigma = 0.0
+			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f} loss: {:.8f}".format(
+				epoch + 1, max_epoch, i + 1, len(train_loader), euc_loss_avg, reg_loss_avg, loss_avg))
 		#scheduler.step()
 
 	euc_loss_sigma = 0.0
 	reg_loss_sigma = 0.0
+	loss_sigma = 0.0
 	net.eval()
 	for i, data in enumerate(test_loader):
 		images, coord_labels, heatmaps_labels, name = data
@@ -219,27 +235,31 @@ for epoch in range(max_epoch):
 
 		# forward
 		coords, heatmaps = net(images)
-		
-		out_for_image = heatmaps*255
-		out_for_image = out_for_image.cpu()
-		for b in range(len(out_for_image)):
-			joint_image = np.zeros((56,56))
-			for j in range(5):
-				joint_image += out_for_image.detach().numpy()[b][j]
-			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
-		euc_losses = criterion(coords, coord_labels.float())
-		reg_losses = criterion(heatmaps, heatmaps_labels.float())
-		loss = euc_losses + reg_losses
+		euc_losses = dsntnn.euclidean_losses(coords, coord_labels)
+		reg_losses = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=1.0)
+		loss = dsntnn.average_loss(euc_losses)
 
-		euc_loss_sigma += euc_losses.item()
-		reg_loss_sigma += reg_losses.item()
+		euc_loss_sigma += dsntnn.average_loss(euc_losses).item()
+		reg_loss_sigma += dsntnn.average_loss(reg_losses).item()
+		loss_sigma += loss.item()
+
+		if(use_gpu):
+			coords = coords.cpu()
+		joint_image = np.zeros((224,224))
+		for b in range(len(coords)):
+			for j in range(5):
+				u_coord = ((coords.detach().numpy()[b][j][0]+1) * img_w - 1) / 2
+				v_coord = ((coords.detach().numpy()[b][j][1]+1) * img_h - 1) / 2
+				joint_image += CenterGaussianHeatMap(224, 224, u_coord, v_coord, 3)
+			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 	euc_loss_avg = euc_loss_sigma / len(test_loader)
 	reg_loss_avg = reg_loss_sigma / len(test_loader)
-	print("Testing: Epoch[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
-		epoch + 1, max_epoch, euc_loss_avg, reg_loss_avg))
+	loss_avg = loss_sigma / len(test_loader)
+	print("Testing: Epoch[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}  loss: {:.8f}".format(
+		epoch + 1, max_epoch, euc_loss_avg, reg_loss_avg, loss_avg))
 
 PATH = 'joint_model_net.pth'
 torch.save(net.state_dict(), PATH)
