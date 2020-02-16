@@ -90,10 +90,7 @@ class RobotJointModel(nn.Module):
 				stage_output = self.stages[i](stage_input)
 				stage_input = torch.cat((VGG_output, stage_output), 1)
 				
-		heatmaps = dsntnn.flat_softmax(stage_output)
-		coords = dsntnn.dsnt(heatmaps)
-
-		return coords, stage_output
+		return stage_output
 
 	def _initialize_weights(self, m):
 		if isinstance(m, nn.Conv2d):
@@ -128,9 +125,9 @@ class MyDataset(Dataset):
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
 		data_index = int(matchObj.group(2))
-		coords, heatmaps = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
+		coords = target_data_generate.gen_one_heatmap_target(link_state_target, data_index, camera_index)
 
-		return img, coords, heatmaps, id
+		return img, coords, id
 
 	def __len__(self):
 		return len(self.imgs_index)
@@ -162,63 +159,55 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)  
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-7, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
-	euc_loss_sigma = 0.0
-	reg_loss_sigma = 0.0    # 记录一个epoch的loss之和
+	loss_sigma = 0.0    # 记录一个epoch的loss之和
 	correct = 0.0
 	total = 0.0
 	pre_i = -1
 
 	for i, data in enumerate(train_loader):
-		inputs, coord_labels, heatmaps_labels, _ = data
-		
-		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
+		inputs, coord_labels, _ = data
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
+		heatmaps_labels = dsntnn.make_gauss(coord_labels, (56,56), sigma=1.0)
 
+		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 		if(use_gpu):
 			inputs, coord_labels, heatmaps_labels = inputs.cuda(), coord_labels.cuda(), heatmaps_labels.cuda()
 
-		coords, heatmaps = net(inputs)
-
-		euc_losses = criterion(coords, coord_labels.float())
-		reg_losses = criterion(heatmaps, heatmaps_labels.float())
-		loss = 0.2*euc_losses + 0.8*reg_losses
+		heatmaps = net(inputs)
+		loss = criterion(heatmaps, heatmaps_labels.float())
 
 		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
 
 		if(use_gpu):
-			euc_loss = euc_losses.cpu()
-			reg_loss = reg_losses.cpu()
-		euc_loss_sigma += euc_losses.item()
-		reg_loss_sigma += reg_losses.item()
+			loss = loss.cpu()
+		loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
 		if i % 10 == 9 or i == len(train_loader)-1:
-			euc_loss_avg = euc_loss_sigma / (i-pre_i)
-			reg_loss_avg = reg_loss_sigma / (i-pre_i)
+			loss_avg = loss_sigma / (i-pre_i)
 			pre_i = i
-			euc_loss_sigma = 0.0
-			reg_loss_sigma = 0.0
-			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
-				epoch + 1, max_epoch, i + 1, len(train_loader), euc_loss_avg, reg_loss_avg))
+			loss_sigma = 0.0
+			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
+				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
 		#scheduler.step()
 
-	euc_loss_sigma = 0.0
-	reg_loss_sigma = 0.0
+	loss_sigma = 0.0
 	net.eval()
 	for i, data in enumerate(test_loader):
-		images, coord_labels, heatmaps_labels, name = data
-		images, coord_labels, heatmaps_labels = torch.autograd.Variable(images), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
+		images, coord_labels, name = data
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
+		heatmaps_labels = dsntnn.make_gauss(coord_labels, (56,56), sigma=1.0)
 
+		images, coord_labels, heatmaps_labels = torch.autograd.Variable(images), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 		if(use_gpu):
 			images, coord_labels, heatmaps_labels = images.cuda(), coord_labels.cuda(), heatmaps_labels.cuda()
 
 		# forward
-		coords, heatmaps = net(images)
+		heatmaps = net(images)
 		
 		out_for_image = heatmaps*255
 		out_for_image = out_for_image.cpu()
@@ -229,17 +218,13 @@ for epoch in range(max_epoch):
 			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
-		euc_losses = criterion(coords, coord_labels.float())
-		reg_losses = criterion(heatmaps, heatmaps_labels.float())
-		loss = 0.2*euc_losses + 0.8*reg_losses
+		loss = criterion(heatmaps, heatmaps_labels.float())
 
-		euc_loss_sigma += euc_losses.item()
-		reg_loss_sigma += reg_losses.item()
+		loss_sigma += loss.item()
 
-	euc_loss_avg = euc_loss_sigma / len(test_loader)
-	reg_loss_avg = reg_loss_sigma / len(test_loader)
-	print("Testing: Epoch[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
-		epoch + 1, max_epoch, euc_loss_avg, reg_loss_avg))
+	loss_avg = loss_sigma / len(test_loader)
+	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {:.8f}".format(
+		epoch + 1, max_epoch, loss_avg))
 
 PATH = 'joint_model_net.pth'
 torch.save(net.state_dict(), PATH)

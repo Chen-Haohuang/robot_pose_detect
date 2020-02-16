@@ -5,6 +5,7 @@ import cv2
 import matplotlib.pyplot as plt
 from PIL import Image
 import json
+import dsntnn,torch
 
 def gen_joint_state_target():
     joint_state_file = open("joints_controller_cmd_publisher-stdout.log","r")
@@ -163,11 +164,15 @@ def gen_one_heatmap_target(link_state, data_index, camera_index):
         u_v = np.dot(P[camera_index-1], C)
         u_v = u_v / Zc
         u_v = u_v / u_v[2][0]
-        heatmap[j-1] = cv2.resize(CenterGaussianHeatMap(224, 224, u_v[0][0], u_v[1][0], 3), (56,56))
-        imghm += heatmap[j-1]
         u_v_ret[j-1][0] = u_v[0][0]
         u_v_ret[j-1][1] = u_v[1][0]
 
-    return u_v_ret, heatmap
+        # u_v_for_dsnt = np.array([[u_v[0][0],u_v[1][0]]])
+        # u_v_for_dsnt = (u_v_for_dsnt*2+1)/224 - 1
+        # u_v_for_dsnt = torch.from_numpy(u_v_for_dsnt).unsqueeze(0)
+        # heatmap[j-1] = dsntnn.make_gauss(u_v_for_dsnt, (56,56), sigma=1.0) #cv2.resize(CenterGaussianHeatMap(224, 224, u_v[0][0], u_v[1][0], 3), (56,56))
+        # imghm += heatmap[j-1]
+
+    return u_v_ret
         
 
