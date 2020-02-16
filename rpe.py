@@ -18,9 +18,9 @@ use_gpu = torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 16
+batch_size = 1
 lr_init = 1e-5
-num_workers_init = 32
+num_workers_init = 1
 max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
@@ -166,6 +166,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)  
 for epoch in range(max_epoch):
 	euc_loss_sigma = 0.0
 	reg_loss_sigma = 0.0    # 记录一个epoch的loss之和
+	loss_sigma = 0.0
 	correct = 0.0
 	total = 0.0
 	pre_i = -1
@@ -193,22 +194,27 @@ for epoch in range(max_epoch):
 		if(use_gpu):
 			euc_loss = euc_losses.cpu()
 			reg_loss = reg_losses.cpu()
+			loss = loss.cpu()
 		euc_loss_sigma += dsntnn.average_loss(euc_losses).item()
 		reg_loss_sigma += dsntnn.average_loss(reg_losses).item()
+		loss_sigma += loss.item()
 
         # 每10个iteration 打印一次训练信息，loss为10个iteration的平均
 		if i % 10 == 9 or i == len(train_loader)-1:
 			euc_loss_avg = euc_loss_sigma / (i-pre_i)
 			reg_loss_avg = reg_loss_sigma / (i-pre_i)
+			loss_avg = loss_sigma / (i-pre_i)
 			pre_i = i
 			euc_loss_sigma = 0.0
 			reg_loss_sigma = 0.0
-			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
-				epoch + 1, max_epoch, i + 1, len(train_loader), euc_loss_avg, reg_loss_avg))
+			loss_sigma = 0.0
+			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f} loss: {:.8f}".format(
+				epoch + 1, max_epoch, i + 1, len(train_loader), euc_loss_avg, reg_loss_avg, loss_avg))
 		#scheduler.step()
 
 	euc_loss_sigma = 0.0
 	reg_loss_sigma = 0.0
+	loss_sigma = 0.0
 	net.eval()
 	for i, data in enumerate(test_loader):
 		images, coord_labels, heatmaps_labels, name = data
@@ -237,11 +243,13 @@ for epoch in range(max_epoch):
 
 		euc_loss_sigma += dsntnn.average_loss(euc_losses).item()
 		reg_loss_sigma += dsntnn.average_loss(reg_losses).item()
+		loss_sigma += loss.item()
 
 	euc_loss_avg = euc_loss_sigma / len(test_loader)
 	reg_loss_avg = reg_loss_sigma / len(test_loader)
-	print("Testing: Epoch[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}".format(
-		epoch + 1, max_epoch, euc_loss_avg, reg_loss_avg))
+	loss_avg = loss_sigma / len(test_loader)
+	print("Testing: Epoch[{:0>3}/{:0>3}] euc_losses: {:.8f} reg_losses: {:.8f}  loss: {:.8f}".format(
+		epoch + 1, max_epoch, euc_loss_avg, reg_loss_avg, loss_avg))
 
 PATH = 'joint_model_net.pth'
 torch.save(net.state_dict(), PATH)
