@@ -18,14 +18,14 @@ use_gpu = torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 1
+batch_size = 16
 lr_init = 1e-5
-num_workers_init = 1
+num_workers_init = 64
 max_epoch = 50
 
 all_data_list = os.listdir('./camera_train_data')
-test_data_list = random.sample(all_data_list, 2000)[:1]
-train_data_list = list(set(all_data_list) - set(test_data_list))[:1]
+test_data_list = random.sample(all_data_list, 2000)
+train_data_list = list(set(all_data_list) - set(test_data_list))
 random.shuffle(test_data_list)
 random.shuffle(train_data_list)
 
