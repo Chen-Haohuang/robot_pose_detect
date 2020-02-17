@@ -169,7 +169,7 @@ for epoch in range(max_epoch):
 		inputs, coord_labels, _ = data
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
-		heatmaps_labels = dsntnn.make_gauss(coord_labels, (56,56), sigma=1.0)
+		heatmaps_labels = dsntnn.make_gauss(coord_labels, (56,56), sigma=3.0)
 
 		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 		if(use_gpu):
