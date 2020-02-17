@@ -17,14 +17,21 @@ use_gpu = torch.cuda.is_available()
 torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
-batch_size = 16
-lr_init = 1e-4
-num_workers_init = 64
-max_epoch = 100
+batch_size = 1
+lr_init = 1e-5
+num_workers_init = 1
+max_epoch = 50
 
-all_data_list = os.listdir('./camera_train_data')
-test_data_list = random.sample(all_data_list, 1200)
-train_data_list = list(set(all_data_list) - set(test_data_list))
+test_data_list = []
+for i in range(11500, 12000):
+	test_data_list.append('camera1-'+str(i)+'.png')
+	test_data_list.append('camera2-'+str(i)+'.png')
+	test_data_list.append('camera3-'+str(i)+'.png')
+train_data_list = []
+for i in range(0, 11500):
+	train_data_list.append('camera1-'+str(i)+'.png')
+	train_data_list.append('camera2-'+str(i)+'.png')
+	train_data_list.append('camera3-'+str(i)+'.png')
 random.shuffle(test_data_list)
 random.shuffle(train_data_list)
 
@@ -168,7 +175,7 @@ for epoch in range(max_epoch):
 		inputs, coord_labels, _ = data
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
-		heatmaps_labels = dsntnn.make_gauss(coord_labels, (56,56), sigma=3.0)
+		heatmaps_labels = dsntnn.make_gauss(coord_labels, (56,56), sigma=1.0)
 
 		inputs, coord_labels, heatmaps_labels = torch.autograd.Variable(inputs), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 		if(use_gpu):
@@ -192,8 +199,8 @@ for epoch in range(max_epoch):
 			loss_sigma = 0.0
 			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {}".format(
 				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
-	if(epoch < 40):
-		scheduler.step()
+	# if(epoch < 40):
+	# 	scheduler.step()
 
 	loss_sigma = 0.0
 	net.eval()
@@ -201,7 +208,7 @@ for epoch in range(max_epoch):
 		images, coord_labels, name = data
 
 		coord_labels = (coord_labels*2 + 1) / torch.Tensor([img_w,img_h]) - 1
-		heatmaps_labels = dsntnn.make_gauss(coord_labels, (56,56), sigma=3.0)
+		heatmaps_labels = dsntnn.make_gauss(coord_labels, (56,56), sigma=1.0)
 
 		images, coord_labels, heatmaps_labels = torch.autograd.Variable(images), torch.autograd.Variable(coord_labels), torch.autograd.Variable(heatmaps_labels)
 		if(use_gpu):

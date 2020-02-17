@@ -3,8 +3,15 @@ import math
 import target_data_generate
 from scipy.linalg import solve
 import cv2
+import rpe_model
+import torch
+import torchvision.transforms as transforms
+from PIL import Image
+import matplotlib.pyplot as plt
+import dsntnn
 
-np.set_printoptions(threshold=100000000)
+torch.set_printoptions(threshold=100000000,linewidth=100000000000)
+np.set_printoptions(threshold=100000000,linewidth=100000000000)
 
 R_T = [
             np.array([
@@ -44,13 +51,6 @@ P = [
             [0.0, 0.0, 1.0, 0.0]
             ])
     ]
-
-X = np.zeros((56,56))
-Y = np.zeros((56,56))
-for i in range(56):
-    for j in range(56):
-        X[i][j] = (2.0*j-57.0)/56.0
-        Y[i][j] = (2.0*i-57.0)/56.0
 
 def angle1(joint2_pos):
     joint2_pos_init = np.array([0.030000,0.000000,0.380000])
@@ -242,18 +242,10 @@ def model_predict2angle(u_v_1, u_v_2, u_v_3):
 
     joint_pos = np.zeros((5,3))
     for joint_index in range(5):
-        u_v = np.zeros((5,2))
-        u_v[0] = u_v_1[joint_index]*4.0
-        u_v[1] = u_v_2[joint_index]*4.0
-        u_v[2] = u_v_3[joint_index]*4.0
-        print("=====",u_v[0],u_v[1],u_v[2])
-        print(pixel2world(u_v[0], u_v[1], R_T[0], R_T[1], P[0], P[1]))
-        print(pixel2world(u_v[0], u_v[2], R_T[0], R_T[2], P[0], P[2]))
-        print(pixel2world(u_v[1], u_v[2], R_T[1], R_T[2], P[1], P[2]))
-        joint_pos[joint_index] = (pixel2world(u_v[0], u_v[1], R_T[0], R_T[1], P[0], P[1]) + 
-                                  pixel2world(u_v[0], u_v[2], R_T[0], R_T[2], P[0], P[2]) +
-                                  pixel2world(u_v[1], u_v[2], R_T[1], R_T[2], P[1], P[2])) / 3.0
-        print(joint_pos[joint_index])
+        joint_pos[joint_index] = (pixel2world(u_v_1[joint_index], u_v_2[joint_index], R_T[0], R_T[1], P[0], P[1]) + 
+                                  pixel2world(u_v_1[joint_index], u_v_3[joint_index], R_T[0], R_T[2], P[0], P[2]) +
+                                  pixel2world(u_v_2[joint_index], u_v_3[joint_index], R_T[1], R_T[2], P[1], P[2])) / 3
+    print(joint_pos)
 
     joint2_pos = joint_pos[0]
     joint3_pos = joint_pos[1]
@@ -267,29 +259,81 @@ def model_predict2angle(u_v_1, u_v_2, u_v_3):
     a4 = angle4(a1, a2, a3, joint2_pos, joint3_pos, joint4_pos, joint5_pos, joint6_pos)
     a5 = angle5(a1, a2, a3, a4, joint2_pos, joint3_pos, joint4_pos, joint5_pos, joint6_pos)
 
+    print(a1, a2, a3, a4, a5)
+
+    for joint_index in range(5):
+        joint_pos[joint_index] = pixel2world(u_v_1[joint_index], u_v_2[joint_index], R_T[0], R_T[1], P[0], P[1])
+    print(joint_pos)
+
+    joint2_pos = joint_pos[0]
+    joint3_pos = joint_pos[1]
+    joint4_pos = joint_pos[2]
+    joint5_pos = joint_pos[3]
+    joint6_pos = joint_pos[4]
+
+    a1 = angle1(joint2_pos)
+    a2 = angle2(a1, joint2_pos, joint3_pos)
+    a3 = angle3(a1, a2, joint2_pos, joint3_pos, joint4_pos)
+    a4 = angle4(a1, a2, a3, joint2_pos, joint3_pos, joint4_pos, joint5_pos, joint6_pos)
+    a5 = angle5(a1, a2, a3, a4, joint2_pos, joint3_pos, joint4_pos, joint5_pos, joint6_pos)
+
+    print(a1, a2, a3, a4, a5)
+
     return a1, a2, a3, a4, a5
 
 
+data_index = '10'
+means, stdevs = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+norm_trans = transforms.Compose([
+				transforms.ToTensor(),
+				transforms.Normalize(mean=means, std=stdevs)
+			])
+img_1 = Image.open('./camera_train_data/camera1-'+data_index+'.png').convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
+img_1 = norm_trans(img_1)   # 在这里做transform，转为tensor等等
+img_2 = Image.open('./camera_train_data/camera2-'+data_index+'.png').convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
+img_2 = norm_trans(img_2)   # 在这里做transform，转为tensor等等
+img_3 = Image.open('./camera_train_data/camera3-'+data_index+'.png').convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
+img_3 = norm_trans(img_3)   # 在这里做transform，转为tensor等等
+
+net = rpe_model.RobotJointModel()
+net.load_state_dict(torch.load('joint_model_net_DSNT_1e-5_50.pth'))
+net.eval()
+img_1 = img_1.unsqueeze(0)
+heatmap_1 = net(img_1)
+c_1 = dsntnn.dsnt(heatmap_1)
+img_2 = img_2.unsqueeze(0)
+heatmap_2 = net(img_2)
+c_2 = dsntnn.dsnt(heatmap_2)
+img_3 = img_3.unsqueeze(0)
+heatmap_3 = net(img_3)
+c_3 = dsntnn.dsnt(heatmap_3)
+
+# plt.figure()
+# plt.subplot(1,3,1)
+# plt.imshow(sum(heatmap_1.detach().numpy()[0][:]))
+# plt.subplot(1,3,2)
+# plt.imshow(sum(heatmap_2.detach().numpy()[0][:]))
+# plt.subplot(1,3,3)
+# plt.imshow(sum(heatmap_3.detach().numpy()[0][:]))
+# plt.show()
+
+
 link_state_target = target_data_generate.gen_link_state_target()
-u_v_1, heatmap_1 = target_data_generate.gen_one_heatmap_target(link_state_target, 9, 1)
-u_v_2, heatmap_2 = target_data_generate.gen_one_heatmap_target(link_state_target, 9, 2)
-u_v_3, heatmap_3 = target_data_generate.gen_one_heatmap_target(link_state_target, 9, 3)
+u_v_1_data = target_data_generate.gen_one_heatmap_target(link_state_target, int(data_index), 1)
+u_v_2_data = target_data_generate.gen_one_heatmap_target(link_state_target, int(data_index), 2)
+u_v_3_data = target_data_generate.gen_one_heatmap_target(link_state_target, int(data_index), 3)
 
-print(u_v_1[0]*4.0, u_v_2[0]*4.0, u_v_3[0]*4.0)
-print("!!!!!!!!!!!",pixel2world(u_v_1[0]*4.0, u_v_3[0]*4.0, R_T[0], R_T[2], P[0], P[2]))
+# print(((c_1+1)*224-1)/2)
+# print(u_v_1_data)
+# print(((c_2+1)*224-1)/2)
+# print(u_v_2_data)
+# print(((c_3+1)*224-1)/2)
+# print(u_v_3_data)
 
-# print(u_v_1)
-# print(u_v_2)
-# print(u_v_3)
-
-a = model_predict2angle(u_v_1, u_v_2, u_v_3)
-print(a)
-
-link_state_target = target_data_generate.gen_link_state_target()
-u_v_1, _ = target_data_generate.gen_one_heatmap_target(link_state_target, 9, 1)
-u_v_2, _ = target_data_generate.gen_one_heatmap_target(link_state_target, 9, 2)
-
-pixel2world(u_v_1[0]*4.0, u_v_2[0]*4.0, R_T[0], R_T[1], P[0], P[1])
+c_1 = ((c_1+1)*224-1)/2
+c_2 = ((c_2+1)*224-1)/2
+c_3 = ((c_3+1)*224-1)/2
+print(model_predict2angle(c_1.detach().numpy()[0], c_2.detach().numpy()[0], c_3.detach().numpy()[0]))
 
 
 
