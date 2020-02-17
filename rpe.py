@@ -18,12 +18,13 @@ torch.set_num_threads(80)
 
 img_h, img_w = 224, 224
 batch_size = 16
-lr_init = 1e-5
+lr_init = 1e-4
 num_workers_init = 64
-max_epoch = 50
+max_epoch = 100
 
 all_data_list = os.listdir('./camera_train_data')
-test_data_list = random.sample(all_data_list, 2000)
+all_data_list = [a for a in all_data_list if 'camera3' not in a]
+test_data_list = random.sample(all_data_list, 1200)
 train_data_list = list(set(all_data_list) - set(test_data_list))
 random.shuffle(test_data_list)
 random.shuffle(train_data_list)
@@ -155,7 +156,7 @@ if(use_gpu):
 	criterion = criterion.cuda()
 #optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, momentum=0.9, dampening=0.1)    # 选择优化器
 optimizer = torch.optim.Adam(net.parameters(), lr=lr_init)    # 选择优化器
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)     # 设置学习率下降策略
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)     # 设置学习率下降策略
 # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', verbose=True, threshold=1e-7, min_lr=1e-7, factor=0.9)     # 设置学习率下降策略
 
 for epoch in range(max_epoch):
@@ -190,9 +191,9 @@ for epoch in range(max_epoch):
 			loss_avg = loss_sigma / (i-pre_i)
 			pre_i = i
 			loss_sigma = 0.0
-			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.8f}".format(
+			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {}".format(
 				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
-		#scheduler.step()
+	scheduler.step()
 
 	loss_sigma = 0.0
 	net.eval()
@@ -223,7 +224,7 @@ for epoch in range(max_epoch):
 		loss_sigma += loss.item()
 
 	loss_avg = loss_sigma / len(test_loader)
-	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {:.8f}".format(
+	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {}".format(
 		epoch + 1, max_epoch, loss_avg))
 
 PATH = 'joint_model_net.pth'
