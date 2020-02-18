@@ -20,7 +20,7 @@ img_h, img_w = 224, 224
 batch_size = 16
 lr_init = 1e-5
 num_workers_init = 64
-max_epoch = 50
+max_epoch = 100
 
 test_data_list = []
 for i in range(11500, 12000):
@@ -126,8 +126,10 @@ class MyDataset(Dataset):
 	def __getitem__(self, index):
 		id = self.imgs_index[index]
 		fn = self.path + id
-		img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
-		img = self.transform(img)   # 在这里做transform，转为tensor等等
+		# img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
+		# img = self.transform(img)   # 在这里做transform，转为tensor等等
+		img = torch.from_numpy(cv2.imread(fn)).permute(2,0,1).float()
+		img = img.div(255)
 
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
@@ -200,7 +202,7 @@ for epoch in range(max_epoch):
 			print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {}".format(
 				epoch + 1, max_epoch, i + 1, len(train_loader), loss_avg))
 	# if(epoch < 40):
-	scheduler.step()
+	# scheduler.step()
 
 	loss_sigma = 0.0
 	net.eval()
