@@ -96,8 +96,6 @@ class RobotJointModel(nn.Module):
 			else:
 				stage_output = self.stages[i](stage_input)
 				stage_input = torch.cat((VGG_output, stage_output), 1)
-
-		stage_output = dsntnn.flat_softmax(stage_output)
 				
 		return stage_output
 
