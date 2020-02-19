@@ -126,10 +126,8 @@ class MyDataset(Dataset):
 	def __getitem__(self, index):
 		id = self.imgs_index[index]
 		fn = self.path + id
-		# img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
-		# img = self.transform(img)   # 在这里做transform，转为tensor等等
-		img = torch.from_numpy(cv2.imread(fn)).permute(2,0,1).float()
-		img = img.div(255)
+		img = Image.open(fn).convert('RGB')     # 像素值 0~255，在transfrom.totensor会除以255，使像素值变成 0~1
+		img = self.transform(img)   # 在这里做transform，转为tensor等等
 
 		matchObj = re.match(r'camera(.*?)-(.*?).png', id, re.M|re.I)
 		camera_index = int(matchObj.group(1))
