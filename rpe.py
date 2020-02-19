@@ -184,7 +184,9 @@ for epoch in range(max_epoch):
 			inputs, coord_labels, heatmaps_labels = inputs.cuda(), coord_labels.cuda(), heatmaps_labels.cuda()
 
 		heatmaps = net(inputs)
-		loss = criterion(heatmaps, heatmaps_labels.float())
+		# loss = criterion(heatmaps, heatmaps_labels.float())
+		loss = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=1.0)
+		loss = dsntnn.average_loss(loss)
 
 		optimizer.zero_grad()
 		loss.backward()
@@ -219,16 +221,18 @@ for epoch in range(max_epoch):
 		# forward
 		heatmaps = net(images)
 		
-		out_for_image = heatmaps*255
-		out_for_image = out_for_image.cpu()
-		for b in range(len(out_for_image)):
-			joint_image = np.zeros((56,56))
-			for j in range(5):
-				joint_image += out_for_image.detach().numpy()[b][j]
-			cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
+		# out_for_image = heatmaps*255
+		# out_for_image = out_for_image.cpu()
+		# for b in range(len(out_for_image)):
+		# 	joint_image = np.zeros((56,56))
+		# 	for j in range(5):
+		# 		joint_image += out_for_image.detach().numpy()[b][j]
+		# 	cv2.imwrite('./test_predict/'+name[b]+'-joints.png', joint_image)
 
 		# 计算loss
-		loss = criterion(heatmaps, heatmaps_labels.float())
+		# loss = criterion(heatmaps, heatmaps_labels.float())
+		loss = dsntnn.js_reg_losses(heatmaps, coord_labels, sigma_t=1.0)
+		loss = dsntnn.average_loss(loss)
 
 		loss_sigma += loss.item()
 
@@ -236,5 +240,5 @@ for epoch in range(max_epoch):
 	print("Testing: Epoch[{:0>3}/{:0>3}] Loss: {}".format(
 		epoch + 1, max_epoch, loss_avg))
 
-PATH = 'joint_model_net.pth'
+PATH = 'joint_model_net_dsntnnLoss.pth'
 torch.save(net.state_dict(), PATH)
