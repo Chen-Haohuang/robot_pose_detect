@@ -1,0 +1,16 @@
+<package>
+  <description brief="XB6_control">
+
+     XB6_control
+
+  </description>
+  <author>chh</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/XB6_control</url>
+  <depend package="urdf"/>
+  <depend package="xacro"/>
+
+</package>
+
+

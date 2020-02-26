@@ -1,0 +1,11 @@
+<library path="lib/librviz_eval_panel">
+  <class name="rviz_eval_panel/EvalJointStatesPanel"    
+	type="rviz_eval_panel::EvalJointStatesPanel"
+	base_class_type="rviz::Panel">
+    <description>
+	A panel widget allowing simple diff-drive style robot base control.
+    </description>
+  </class>
+</library>
+
+

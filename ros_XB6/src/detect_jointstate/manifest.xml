@@ -1,0 +1,15 @@
+<package>
+  <description brief="detect_jointstate">
+
+     detect_jointstate
+
+  </description>
+  <author>chh</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/detect_jointstate</url>
+  <depend package="rospy"/>
+
+</package>
+
+

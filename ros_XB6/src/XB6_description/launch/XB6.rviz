@@ -1,0 +1,406 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Status1
+        - /RobotModel1
+        - /RobotModel1/Links1
+        - /RobotModel1/Links1/XB6_link11
+        - /RobotModel1/Links1/XB6_link21
+        - /RobotModel1/Links1/XB6_link31
+        - /RobotModel1/Links1/XB6_link41
+        - /RobotModel1/Links1/XB6_link51
+        - /RobotModel1/Links1/XB6_link61
+        - /RobotModel1/Links1/world1
+        - /TF1/Frames1
+        - /TF1/Tree1
+        - /real_Image11
+        - /real_Image21
+        - /real_Image31
+        - /detect_image11
+        - /detect_image21
+        - /detect_image31
+      Splitter Ratio: 0.4936310052871704
+    Tree Height: 411
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.4323529303073883
+  - Class: rviz/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: real_Image1
+  - Class: rviz_eval_panel/EvalJointStatesPanel
+    Name: EvalJointStatesPanel
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: false
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: false
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: true
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        XB6_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        XB6_link1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        XB6_link2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        XB6_link3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        XB6_link4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        XB6_link5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        XB6_link6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_link_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_link_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_link_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_link_optical_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_link_optical_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_link_optical_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Name: RobotModel
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz/TF
+      Enabled: false
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        {}
+      Update Interval: 0
+      Value: false
+    - Alpha: 1
+      Class: rviz/Effort
+      Enabled: true
+      History Length: 1
+      Joints:
+        joint1:
+          Value: true
+        joint2:
+          Value: true
+        joint3:
+          Value: true
+        joint4:
+          Value: true
+        joint5:
+          Value: true
+        joint6:
+          Value: true
+      Name: Effort
+      Robot Description: robot_description
+      Scale: 1
+      TF Prefix: ""
+      Topic: /xb06/joint_states
+      Unreliable: false
+      Value: true
+      Width: 0.019999999552965164
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /camera1/color/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: real_Image1
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /camera2/color/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: real_Image2
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /camera3/color/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: real_Image3
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /XB6/detect_image1
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: detect_image1
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /XB6/detect_image2
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: detect_image2
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /XB6/detect_image3
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: detect_image3
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Default Light: true
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: false
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 1.5
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 1.5
+        Y: 0
+        Z: 0.5
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.0010000000474974513
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+      Yaw: 0
+    Saved:
+      - Class: rviz/Orbit
+        Distance: 1.5
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.5
+          Y: 0
+          Z: 0.5
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.0010000000474974513
+        Invert Z Axis: false
+        Name: view_1
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz)
+        Yaw: 0
+      - Class: rviz/Orbit
+        Distance: 1.5
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 0
+          Y: -1.5
+          Z: 0.5
+        Focal Shape Fixed Size: false
+        Focal Shape Size: 0.0010000000474974513
+        Invert Z Axis: false
+        Name: view_2
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz)
+        Yaw: 4.710000038146973
+      - Class: rviz/Orbit
+        Distance: 1.850000023841858
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 0
+          Y: 0
+          Z: 1.850000023841858
+        Focal Shape Fixed Size: false
+        Focal Shape Size: 0.0010000000474974513
+        Invert Z Axis: false
+        Name: view_3
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 1.5697963237762451
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz)
+        Yaw: 3.140000104904175
+Window Geometry:
+  Displays:
+    collapsed: false
+  EvalJointStatesPanel:
+    collapsed: false
+  Height: 1025
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd000000040000000000000272000001d9fc020000000efb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000f2000001d9000000ca00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e006700000001ec000001b60000000000000000fb0000000c00430061006d00650072006101000001740000015f0000000000000000fb0000000c00430061006d00650072006101000002d9000000c70000000000000000fb0000000c00540065006c0065006f00700000000016000003ce0000000000000000fb0000000800480065006c00700100000016000003ce0000000000000000fb0000000c00430061006d00650072006100000002520000019200000000000000000000000100000122000001cafc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000073d000000d5fc0100000006fb0000000a0056006900650077007301000000000000027f0000010000fffffffb00000016007200650061006c005f0049006d00610067006500310100000285000001910000007a00fffffffb00000016007200650061006c005f0049006d0061006700650032010000041c000001920000007a00fffffffb00000016007200650061006c005f0049006d006100670065003301000005b4000001890000007a00fffffffb0000000800540069006d00650000000000000005640000026200fffffffb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073d00000112fc0100000005fb00000028004500760061006c004a006f0069006e007400530074006100740065007300500061006e0065006c010000000000000281000001d000fffffffb0000001a006400650074006500630074005f0069006d006100670065003101000002870000019f0000008800fffffffb0000001a006400650074006500630074005f0069006d0061006700650032010000042c000001860000008800fffffffb0000001a006400650074006500630074005f0069006d006100670065003301000005b8000001850000008800fffffffb0000000800540069006d00650100000000000004500000000000000000000004c5000001d900000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1853
+  X: 67
+  Y: 27
+  detect_image1:
+    collapsed: false
+  detect_image2:
+    collapsed: false
+  detect_image3:
+    collapsed: false
+  real_Image1:
+    collapsed: false
+  real_Image2:
+    collapsed: false
+  real_Image3:
+    collapsed: false

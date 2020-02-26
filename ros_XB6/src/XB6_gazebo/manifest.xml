@@ -1,0 +1,16 @@
+<package>
+  <description brief="XB6_gazebo">
+
+     XB6_gazebo
+
+  </description>
+  <author>chh</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/XB6_gazebo</url>
+  <depend package="urdf"/>
+  <depend package="xacro"/>
+
+</package>
+
+

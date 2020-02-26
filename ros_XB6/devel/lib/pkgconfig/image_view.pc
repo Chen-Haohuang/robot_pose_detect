@@ -1,0 +1,8 @@
+prefix=/home/chh/ros_XB6/devel
+
+Name: image_view
+Description: Description of image_view
+Version: 1.12.23
+Cflags: -I/home/chh/ros_XB6/devel/include
+Libs: -L/home/chh/ros_XB6/devel/lib 
+Requires: dynamic_reconfigure

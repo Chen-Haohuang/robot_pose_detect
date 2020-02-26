@@ -1,0 +1,8 @@
+prefix=/home/chh/ros_XB6/install
+
+Name: XB6_description
+Description: Description of XB6_description
+Version: 0.0.1
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

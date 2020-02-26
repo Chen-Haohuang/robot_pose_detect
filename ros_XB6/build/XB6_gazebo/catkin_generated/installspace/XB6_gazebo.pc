@@ -1,0 +1,8 @@
+prefix=/home/chh/ros_XB6/install
+
+Name: XB6_gazebo
+Description: Description of XB6_gazebo
+Version: 0.1.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

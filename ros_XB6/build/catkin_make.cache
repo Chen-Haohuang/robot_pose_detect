@@ -1,0 +1,2 @@
+XB6_control:XB6_description:XB6_gazebo:rviz_eval_panel
+-DCATKIN_DEVEL_PREFIX=/home/chh/ros_XB6/devel -DCMAKE_INSTALL_PREFIX=/home/chh/ros_XB6/install -G Unix Makefiles

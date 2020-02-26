@@ -1,0 +1,8 @@
+prefix=/home/chh/ros_XB6/install
+
+Name: camera_calibration
+Description: Description of camera_calibration
+Version: 1.12.23
+Cflags: 
+Libs: -L/home/chh/ros_XB6/install/lib 
+Requires: 

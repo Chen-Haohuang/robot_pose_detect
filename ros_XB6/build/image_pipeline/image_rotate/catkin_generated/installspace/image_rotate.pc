@@ -1,0 +1,8 @@
+prefix=/home/chh/ros_XB6/install
+
+Name: image_rotate
+Description: Description of image_rotate
+Version: 1.12.23
+Cflags: -I/home/chh/ros_XB6/install/include
+Libs: -L/home/chh/ros_XB6/install/lib 
+Requires: 
