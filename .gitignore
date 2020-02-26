@@ -1,2 +1,4 @@
-test_predict/*
-camera_data/*
+robot_data_proc/camera_data/*
+robot_data_proc/camera_train_data/*
+robot_data_proc/*.pth
+
